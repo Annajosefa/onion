@@ -35,6 +35,10 @@ if __name__ == '__main__':
         soil_moisture = float(data[2])
         lux = float(data[3])
         proximity_sensor_1 = int(data[4])
+        proximity_sensor_2 = int(data[5])
+        proximity_sensor_3 = int(data[6])
+        proximity_sensor_4 = int(data[7])
+        proximity_sensor_5 = int(data[8])
         
         if temperature > 25:
             if not exhaust_open:
@@ -74,4 +78,20 @@ if __name__ == '__main__':
         
         if proximity_sensor_1 == 1:
             # Send notification
+            pass
+        
+        if proximity_sensor_2 == 1:
+            # Send notification
+            pass
+
+        if proximity_sensor_3 == 1:
+            # Send notification
+            pass
+
+        if proximity_sensor_4 == 1:
+            # Send notification
+            pass
+        
+        if proximity_sensor_5 == 1:
+            # Send notification 
             pass
