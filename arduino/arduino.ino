@@ -1,4 +1,4 @@
-#include<dht.h>
+#include <dht.h>
 #include "Arduino.h"
 #include <Wire.h>
 #include <BH1750.h>
@@ -7,8 +7,12 @@
 dht DHT;
 BH1750 lightMeter;
  
-int dhtPin = 8;
+int dhtPin = 6;
 int proximitySensor1 = 7;
+int proximitySensor2 = 8;
+int proximitySensor3 = 9;
+int proximitySensor4 = 10;
+int proximitySensor5 = 11;
 const int sensorPin = A0;
  
 String command = "";
@@ -46,16 +50,14 @@ void receiveCommand(){
    */
   if(Serial.available()){
     int sent = Serial.readStringUntil('\n').toInt();
-    Serial.println("ok");
     current_command = sent;
   }
 }
  
 void getConditions(){
   DHT.read22(dhtPin);
-  String condition = String(getTemperature()) + " " + String(getHumidity()) + " " + String(getMoisturePercentage()) + " " + String(getLux()) + " " + String(getProximitySensor1());
-  sendResponse("92");
-  Serial.println(condition);
+  String condition = String(getTemperature()) + " " + String(getHumidity()) + " " + String(getMoisturePercentage()) + " " + String(getLux()) + " " + String(getProximitySensor1()) + " " + String(getProximitySensor2()) + " " + String(getProximitySensor3()) + " " + String(getProximitySensor4()) + " " + String(getProximitySensor5());
+  sendResponse(condition);
 }
  
 float getTemperature(){
@@ -89,6 +91,38 @@ int getProximitySensor1(){
    * Check if an object is detected on Proximity Sensor 1
    */
   int state = digitalRead(proximitySensor1);
+  return state;
+}
+
+int getProximitySensor2(){
+  /*
+   * Check if an object is detected on Proximity Sensor 1
+   */
+  int state = digitalRead(proximitySensor2);
+  return state;
+}
+
+int getProximitySensor3(){
+  /*
+   * Check if an object is detected on Proximity Sensor 1
+   */
+  int state = digitalRead(proximitySensor3);
+  return state;
+}
+
+int getProximitySensor4(){
+  /*
+   * Check if an object is detected on Proximity Sensor 1
+   */
+  int state = digitalRead(proximitySensor4);
+  return state;
+}
+
+int getProximitySensor5(){
+  /*
+   * Check if an object is detected on Proximity Sensor 1
+   */
+  int state = digitalRead(proximitySensor5);
   return state;
 }
  
