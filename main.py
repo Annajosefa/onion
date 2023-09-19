@@ -51,10 +51,6 @@ if __name__ == '__main__':
         proximity_sensor_3 = int(data[6])
         proximity_sensor_4 = int(data[7])
         proximity_sensor_5 = int(data[8])
-<<<<<<< HEAD
-        print(f'{temperature} {humidity} {soil_moisture} {lux} {proximity_sensor_1} {proximity_sensor_2} {proximity_sensor_3} {proximity_sensor_4} {proximity_sensor_5}')
-=======
->>>>>>> cefd6f0b6cb96a651ad7d0dff768de5faefb3e94
         
         if temperature > 25:
             if not exhaust_open:
@@ -95,55 +91,39 @@ if __name__ == '__main__':
         if proximity_sensor_1 == 1:
             # Send notification
             pass
-<<<<<<< HEAD
 
-
-=======
-        
->>>>>>> cefd6f0b6cb96a651ad7d0dff768de5faefb3e94
         if proximity_sensor_2 == 1:
             # Send notification
             pass
 
-<<<<<<< HEAD
-
-=======
->>>>>>> cefd6f0b6cb96a651ad7d0dff768de5faefb3e94
         if proximity_sensor_3 == 1:
             # Send notification
             pass
 
-<<<<<<< HEAD
-
         if proximity_sensor_4 == 1:
             # Send notification
             pass
-
 
         if proximity_sensor_5 == 1:
             # Send notification
             pass
 
-        parameter_data = {
-            'humidity': humidity,
-            'light': lux,
+        data = {
             'soil': soil_moisture,
+            'humidity': humidity,
             'temperature': temperature,
-            'created-at': datetime.datetime.now(tz=datetime.timezone.utc)
-
+            'light': lux,
+            'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
-        parameters_ref.add(parameter_data)
-
-
-        time.sleep(3)
-
-
-=======
-        if proximity_sensor_4 == 1:
-            # Send notification
-            pass
+        parameters_ref.add(data)
         
-        if proximity_sensor_5 == 1:
-            # Send notification 
-            pass
->>>>>>> cefd6f0b6cb96a651ad7d0dff768de5faefb3e94
+        rows = {
+            'r1': proximity_sensor_1,
+            'r2': proximity_sensor_2,
+            'r3': proximity_sensor_3,
+            'r4': proximity_sensor_4,
+            'r5': proximity_sensor_5,
+            'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
+        }
+        rows_ref.add(rows)
+        time.sleep(5)
