@@ -37,6 +37,8 @@ def get_conditions():
         response = response = arduino.readline().decode('utf-8').rstrip()
         if response:
             return response
+        
+        
 
 if __name__ == '__main__':
 

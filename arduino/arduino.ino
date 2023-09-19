@@ -138,17 +138,10 @@ int getProximitySensor3(){
   int state = digitalRead(proximitySensor3);
   return state;
 }
-<<<<<<< HEAD
 
 int getProximitySensor4(){
   /*
    * Check if an object is detected on Proximity Sensor 1
-=======
- 
- int getProximitySensor4(){
-  /*
-   * Check if an object is detected on Proximity Sensor 4
->>>>>>> cefd6f0b6cb96a651ad7d0dff768de5faefb3e94
    */
   int state = digitalRead(proximitySensor4);
   return state;
