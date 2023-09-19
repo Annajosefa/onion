@@ -16,6 +16,7 @@ db = firestore.client()
 parameters_ref = db.collection('parameters')
 rows_ref = db.collection('rows')
 harvests_ref = db.collection('harvests')
+docs = db.collection('users')
 
 exhaust_pin = 17
 sprinkler_pin = 27
@@ -126,4 +127,9 @@ if __name__ == '__main__':
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
         rows_ref.add(rows)
+
+        docs =  db.collection('users').stream()
+        fcm_keys = []
+        for doc in docs:
+            fcm_keys.append(doc.to_dict()['key'])
         time.sleep(5)
