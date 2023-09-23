@@ -26,4 +26,4 @@ topic = topic,
 response = messaging.send_multicast(message)
  
 print('{0} messages were sent successfully'.format(response.success_count))
-messaging.send(message)
+

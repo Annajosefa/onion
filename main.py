@@ -38,7 +38,6 @@ def get_conditions():
         if response:
             return response
         
-        
 
 if __name__ == '__main__':
 
