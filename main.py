@@ -7,8 +7,6 @@ import datetime
 import serial
 import time
 
-import RPi.GPIO as GPIO
-
 
 cred = credentials.Certificate('account.json')
 app = firebase_admin.initialize_app(cred)
@@ -19,22 +17,12 @@ rows_ref = db.collection('rows')
 harvests_ref = db.collection('harvests')
 users_ref= db.collection('users')
 
-exhaust_pin = 17
-sprinkler_pin = 27
-light_pin = 22
 arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(exhaust_pin, GPIO.OUT)
-GPIO.setup(sprinkler_pin, GPIO.OUT)
-GPIO.setup(light_pin, GPIO.OUT)
 
-exhaust_open = False
-sprinkler_open = False
-light_open = False
 
 notif_row1 = False
 notif_row1_start = datetime.datetime.now()
-
+ 
 notif_row2= False
 notif_row2_start = datetime.datetime.now()
 
@@ -50,9 +38,38 @@ notif_row5_start = datetime.datetime.now()
 def get_conditions():
     while True:
         arduino.write(bytes('0\n','utf-8'))
-        response = response = arduino.readline().decode('utf-8').rstrip()
+        response = arduino.readline().decode('utf-8').rstrip()
+        if response and response !='92':
+            return response
+        
+def turn_on_fan():
+    while True:
+        arduino.write(bytes('1/n','utf-8'))
+        response = arduino.readline().decode('utf-8').rstrip()
         if response:
             return response
+        
+def turn_off_fan():
+    while True:
+        arduino.write(bytes('2/n','utf-8'))
+        response = arduino.readline().decode('utf-8').rstrip()
+        if response:
+            return response
+        
+def turn_on_sprinkler():
+    while True:
+        arduino.write(bytes('3/n','utf-8'))
+        response = arduino.readline().decode('utf-8').rstrip()
+        if response:
+            return response
+
+def turn_off_sprinkler():
+    while True:
+        arduino.write(bytes('4/n','utf-8'))
+        response = arduino.readline().decode('utf-8').rstrip()
+        if response:
+            return response
+
         
 def get_keys():
     keys = []
@@ -76,6 +93,8 @@ if __name__ == '__main__':
     while True:
         response = get_conditions()
         data = response.split(' ')
+        print (data)
+        print (response)
         temperature = float(data[0])
         humidity = float(data[1])
         soil_moisture = float(data[2])*100
@@ -86,46 +105,27 @@ if __name__ == '__main__':
         proximity_sensor_4 = int(data[7])
         proximity_sensor_5 = int(data[8])
         
-        if temperature > 25:
-            if not exhaust_open:
-                exhaust_open = True
-                GPIO.output(exhaust_pin, GPIO.HIGH)
+        if temperature > 26:
+           print(turn_on_fan())
         else:
-            if exhaust_open:
-                exhaust_open = False
-                GPIO.output(exhaust_pin, GPIO.LOW)
-
+            temperature < 25
+            print(turn_off_fan())
+           
         if humidity > 50:
-            if not exhaust_open:
-                exhaust_open = True
-                GPIO.output(exhaust_pin, GPIO.HIGH)
+           print(turn_on_fan())
         else:
-            if exhaust_open:
-                exhaust_open = False
-                GPIO.output(exhaust_pin, GPIO.LOW)
+            humidity < 70
+            print(turn_off_fan())
 
-        if soil_moisture < 50:
-            if not sprinkler_open:
-                    sprinkler_open = True
-                    GPIO.output(sprinkler_pin, GPIO.HIGH)
+        if soil_moisture < 60:
+            print(turn_on_sprinkler())  
         elif soil_moisture > 60:
-            if sprinkler_open:
-                sprinkler_open = False
-                GPIO.output(sprinkler_pin, GPIO.LOW)
-
-        if lux > 5400:
-            if not light_open:
-                light_open = True
-                GPIO.output(light_pin, GPIO.HIGH)
-        else:
-            if light_open:
-                light_open = True
-                GPIO.output(light_pin, GPIO.LOW)
+           print(turn_off_sprinkler())
         
         if proximity_sensor_1 == 1:
             if not notif_row1:
                 send_notification(
-                    'Harvest Ready'
+                    'Harvest Ready',
                     'Row 1 is ready to harvest. Please check'
                 )
                 notif_row1 = True
@@ -137,7 +137,7 @@ if __name__ == '__main__':
         if proximity_sensor_2 == 1:
            if not notif_row2:
                 send_notification(
-                    'Harvest Ready'
+                    'Harvest Ready',
                     'Row 2 is ready to harvest. Please check'
                 )
                 notif_row2 = True
@@ -150,7 +150,7 @@ if __name__ == '__main__':
         if proximity_sensor_3 == 1:
             if not notif_row3:
                 send_notification(
-                    'Harvest Ready'
+                    'Harvest Ready',
                     'Row 3 is ready to harvest. Please check'
                 )
                 notif_row3 = True
@@ -163,7 +163,7 @@ if __name__ == '__main__':
         if proximity_sensor_4 == 1:
             if not notif_row4:
                 send_notification(
-                    'Harvest Ready'
+                    'Harvest Ready',
                     'Row 4 is ready to harvest. Please check'
                 )
                 notif_row4 = True
@@ -176,7 +176,7 @@ if __name__ == '__main__':
         if proximity_sensor_5 == 1:
           if not notif_row5:
                 send_notification(
-                    'Harvest Ready'
+                    'Harvest Ready',
                     'Row 5 is ready to harvest. Please check'
                 )
                 notif_row5 = True
@@ -196,11 +196,11 @@ if __name__ == '__main__':
         parameters_ref.add(data)
         
         rows = {
-            'r1': proximity_sensor_1,
-            'r2': proximity_sensor_2,
-            'r3': proximity_sensor_3,
-            'r4': proximity_sensor_4,
-            'r5': proximity_sensor_5,
+            'r1': bool(proximity_sensor_1),
+            'r2': bool(proximity_sensor_2),
+            'r3': bool(proximity_sensor_3),
+            'r4': bool(proximity_sensor_4),
+            'r5': bool(proximity_sensor_5),
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
         rows_ref.add(rows)
