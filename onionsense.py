@@ -37,8 +37,11 @@ class OnionSense:
         command(int): Command to send
         '''
         if(command in self.available_commands):
-            self.arduino.write(bytes(str(command)+'\n','utf-8'))
-            response = self.get_arduino_response()
+            while True:
+                self.arduino.write(bytes(str(command)+'\n','utf-8'))
+                response = self.get_arduino_response()
+                if (response  == 'ok'):
+                    break
         else:
             raise Exception('Unknown command')
     
@@ -52,9 +55,9 @@ class OnionSense:
         response(str): Arduino response
         '''
         try:
-            response = self.arduino.readline().decode('utf-8').rstrip
+            response = self.arduino.readline().decode('utf-8').rstrip()
         except UnicodeDecodeError:
-            response = self.arduino.readline().decode('utf-8').rstrip
+            response = self.arduino.readline().decode('utf-8').rstrip()
         return response
     
 
