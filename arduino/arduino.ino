@@ -79,6 +79,7 @@ void loop(){
 void receiveCommand(){
   if(Serial.available()){
     int sent = Serial.readStringUntil('\n').toInt();
+    Serial.println("ok");S
     current_command = sent;   
   }
 }
@@ -87,8 +88,8 @@ void sendState(){
   /*
    * Get all conditions 
    */
-  DHT.read22(dhtPin);
-  String message = String(getTemperature()) + " " + String(getHumidity()) + " " + String(getAverageMoisturePercentage()) + " " + String(getLux()) + " " + String(getProximitySensor1()) + " " + String(getProximitySensor2()) + " " + String(getProximitySensor3()) + " " + String(getProximitySensor4()) + " " + String(getProximitySensor5()); 
+
+ String message = String(getTemperature()) + " " + String(getHumidity()) + " " + String(getAverageMoisturePercentage()) + " " + String(getLux()) + " " + String(getProximitySensor1()) + " " + String(getProximitySensor2()) + " " + String(getProximitySensor3()) + " " + String(getProximitySensor4()) + " " + String(getProximitySensor5()); 
 Serial.println(message);
 } 
  
