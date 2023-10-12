@@ -79,7 +79,6 @@ void loop(){
 void receiveCommand(){
   if(Serial.available()){
     int sent = Serial.readStringUntil('\n').toInt();
-    Serial.println("ok");
     current_command = sent;   
   }
 }
