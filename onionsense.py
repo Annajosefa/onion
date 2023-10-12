@@ -24,7 +24,7 @@ class OnionSense:
 
         self.arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
         # Enter all available commands here
-        self.available_commands = [0, 1, 2, 3, 4, 5, 6, 7] 
+        self.available_commands = [0, 1, 2, 3, 4, 5] 
 
 
 
@@ -37,7 +37,11 @@ class OnionSense:
         command(int): Command to send
         '''
         if(command in self.available_commands):
-            self.arduino.write(bytes(str(command)+'\n','utf-8'))
+            while True:
+                self.arduino.write(bytes(str(command)+'\n','utf-8'))
+                response = self.get_arduino_response()
+                if(response == 'ok'):
+                    break
         else:
             raise Exception('Unknown command')
     
