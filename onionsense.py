@@ -2,26 +2,31 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from firebase_admin import messaging
-
+from urllib.request import urlopen
 import datetime
 import serial
-import time
 
 class OnionSense:
 
+
     def __init__(self) :
-         '''
+        '''
         Initialize a machine object
         '''
-         cred = credentials.Certificate('account.json')
-         app = firebase_admin.initialize_app(cred)
-         db = firestore.client()
-         
-         parameters_ref = db.collection('parameters')
-         rows_ref = db.collection('rows')
-         harvests_ref = db.collection('harvests')
-         users_ref= db.collection('users')
-         arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
+        cred = credentials.Certificate('account.json')
+        app = firebase_admin.initialize_app(cred)
+        db = firestore.client()
+        
+        self.parameter_reference = db.collection('parameters')
+        self.row_reference = db.collection('rows')
+        self.harvest_reference = db.collection('harvests')
+        self.user_reference = db.collection('users')
+
+        self.arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
+        # Enter all available commands here
+        self.available_commands = [0, 1, 2, 3, 4, 5, 6, 7] 
+
+
 
     def send_command(self, command: int):
         '''
@@ -36,7 +41,9 @@ class OnionSense:
         else:
             raise Exception('Unknown command')
     
-    def get_arduino_response(self)->str:
+
+
+    def get_arduino_response(self) -> str:
         '''
         Get arduino serial response
 
@@ -51,7 +58,7 @@ class OnionSense:
     
 
     
-    def get_data(self)-> dict:
+    def get_data(self) -> dict:
         '''
         Get current data from sensors
 
@@ -66,37 +73,38 @@ class OnionSense:
 
         data = response.split()
         try:
-             humidity = float(data[1])
-             soil_moisture = float(data[2])*100
-             lux = float(data[3])
-             proximity_sensor_1 = int(data[4])
-             proximity_sensor_2 = int(data[5])
-             proximity_sensor_3 = int(data[6])
-             proximity_sensor_4 = int(data[7])
-             proximity_sensor_5 = int(data[8])
+            temperature = float(data[0])
+            humidity = float(data[1])
+            soil_moisture = float(data[2]) * 100
+            lux = float(data[3])
+            proximity_sensor_1 = int(data[4])
+            proximity_sensor_2 = int(data[5])
+            proximity_sensor_3 = int(data[6])
+            proximity_sensor_4 = int(data[7])
+            proximity_sensor_5 = int(data[8])
              
-             parameters = {
-                 'soil': soil_moisture,
-                 'humidity': humidity,
-                 'temperature': temperature,
-                 'light': lux,
-                 'r1': (proximity_sensor_1),
-                 'r2': (proximity_sensor_2),
-                 'r3': (proximity_sensor_3),
-                 'r4': (proximity_sensor_4),
-                 'r5': (proximity_sensor_5),
-                 'success': True
-             }
-             
+            parameters = {
+                'soil': soil_moisture,
+                'humidity': humidity,
+                'temperature': temperature,
+                'light': lux,
+                'r1': proximity_sensor_1,
+                'r2': proximity_sensor_2,
+                'r3': proximity_sensor_3,
+                'r4': proximity_sensor_4,
+                'r5': proximity_sensor_5,
+                'success': True
+            }
         except:
             parameters = {
-             'success':False
-             }
+                'success':False
+            }
+            
         return parameters
     
 
 
-    def update_parameters(self, parameters:dict):
+    def update_parameters(self, parameters: dict):
         '''
         Add new parameter entry in firebase
 
@@ -140,11 +148,11 @@ class OnionSense:
         '''
 
         data = {
-            'r1': parameters[proximity_sensor_1],
-            'r2': parameters[proximity_sensor_2],
-            'r3': parameters[proximity_sensor_3],
-            'r4': parameters[proximity_sensor_4],
-            'r5': parameters[proximity_sensor_5],
+            'r1': parameters['proximity_sensor_1'],
+            'r2': parameters['proximity_sensor_2'],
+            'r3': parameters['proximity_sensor_3'],
+            'r4': parameters['proximity_sensor_4'],
+            'r5': parameters['proximity_sensor_5'],
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
         self.row_reference.add(data)
@@ -166,7 +174,7 @@ class OnionSense:
     
 
 
-    def _get_user_token(self)-> list:
+    def _get_user_tokens(self) -> list:
         '''
         Get all existing user tokens from firebase
 
@@ -196,6 +204,7 @@ class OnionSense:
             tokens = self._get_user_tokens()
         )
 
+
     
     def turn_on_fan(self):
         '''
@@ -204,11 +213,14 @@ class OnionSense:
         self.send_command(1)
 
 
+
     def turn_off_fan(self):
         '''
         Explicit function calling turnOffFan in arduino
         '''
         self.send_command(2)
+
+
 
     def turn_on_sprinkler(self):
         '''
@@ -216,11 +228,15 @@ class OnionSense:
         '''
         self.send_command(3)
 
+
+
     def turn_off_sprinkler(self):
         '''
         Explicit function turnOffSprinkler
         '''
         self.send_command(4)
+
+
 
     def get_internet_datetime(self)-> datetime.datetime:
         '''
@@ -235,5 +251,3 @@ class OnionSense:
         _datetime = datetime + datetime.timedelta(hours = 8)
         return _datetime
     
-
- 

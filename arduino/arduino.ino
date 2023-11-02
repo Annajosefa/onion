@@ -39,7 +39,6 @@ void setup() {
   Wire.begin(); 
   lightMeter.begin(); 
 
-
   scale.set_scale(calibration_factor);
   scale.tare();
 } 
@@ -50,46 +49,58 @@ void loop(){
   if(current_command == -1){ 
     receiveCommand(); 
   } 
+
   else if(current_command == 0){ 
-    getConditions(); 
+    String conditions = getConditions(); 
+    sendResponse(condition);
     current_command = -1; 
   } 
  
- else if (current_command ==1){
-  turnonfan();
-  current_command = -1;
+  else if (current_command == 1){
+    turnOnFan();
+    current_command = -1;
   }
 
- else if(current_command == 2){
-  turnofffan();
-  current_command =-1;
+  else if(current_command == 2){
+    turnOffFan();
+    current_command =-1;
   }
 
   else if(cuurent_command == 3){
-    turnonsprinkler();
+    turnOnSprinkler();
     current_command= -1;
   }
 
   else if(current_command == 4){
-    turnoffsprinkler();
+    turnOffSprinkler();
     current_command= -1;
   }
 
   else if(current_command== 5){
-    getWeight();
-    Serialprinln(getWeight());
+    String weight = String(getWeight());
+    sendResponse(weight);
     current_command = -1;
   }
 } 
 
+void sendResponse(String response){
+  Serial.println(response);  
+}
  
-void sendState(){ 
+void receiveCommand(){
+  if(Serial.available()){
+    int sent = Serial.readStringUntil('\n').toInt();
+    current_command = sent;   
+  }
+}
+
+String getConditions(){ 
+  /*
+   * Get all conditions 
+   */
   DHT.read22(dhtPin); 
   String condition = String(getTemperature()) + " " + String(getHumidity()) + " " + String(getAverageMoisturePercentage()) + " " + String(getLux()) + " " + String(getProximitySensor1()) + " " + String(getProximitySensor2()) + " " + String(getProximitySensor3()) + " " + String(getProximitySensor4()) + " " + String(getProximitySensor5()); 
-  sendResponse(condition); 
-  
-  Serial.println(message); 
- 
+  return condition;
 } 
   
 float getTemperature(){ 
@@ -117,10 +128,12 @@ float getAverageMoisturePercentage (){
   int sensorAnalog; 
   sensorAnalog = {analogRead(sensorPin1), analogRead(sensorPin2), analogRead(sensorPin3), analogRead(sensorPin4)};
   float totalPercentage = 0;
-for (int i=0; i<4; i++) {
-  totalPercentage += ( 100 - ( (sensorAnalog/1023.00) * 100) );
-}
-  float averageMoisturePercentage = total percentage/4;
+
+  for (int i=0; i<4; i++) {
+    totalPercentage += ( 100 - ((sensorAnalog / 1023.00) * 100));
+  }
+
+  float averageMoisturePercentage = total percentage / 4;
   return averageMoisturePercentage; 
 } 
   
@@ -133,6 +146,9 @@ int getProximitySensor1(){
 } 
  
 int getProximitySensor2(){ 
+  /* 
+   * Check if an object is detected on Proximity Sensor 2
+   */ 
   int state = digitalRead(proximitySensor2); 
   return state; 
 } 
@@ -140,13 +156,7 @@ int getProximitySensor2(){
  
 int getProximitySensor3(){ 
   /* 
-   * Check if an object is detected on Proximity Sensor 1 
-======= 
-  
- int getProximitySensor3(){ 
-  /* 
-   * Check if an object is detected on Proximity Sensor 3 
->>>>>>> cefd6f0b6cb96a651ad7d0dff768de5faefb3e94 
+   * Check if an object is detected on Proximity Sensor 3
    */ 
   int state = digitalRead(proximitySensor3); 
   return state; 
@@ -154,7 +164,7 @@ int getProximitySensor3(){
  
 int getProximitySensor4(){ 
   /* 
-   * Check if an object is detected on Proximity Sensor 1 
+   * Check if an object is detected on Proximity Sensor 4
    */ 
   int state = digitalRead(proximitySensor4); 
   return state; 
@@ -163,13 +173,7 @@ int getProximitySensor4(){
  
 int getProximitySensor5(){ 
   /* 
-   * Check if an object is detected on Proximity Sensor 1 
-======= 
-  
-int getProximitySensor5(){ 
-  /* 
-   * Check if an object is detected on Proximity Sensor 5 
->>>>>>> cefd6f0b6cb96a651ad7d0dff768de5faefb3e94 
+   * Check if an object is detected on Proximity Sensor 5
    */ 
   int state = digitalRead(proximitySensor5); 
   return state; 
@@ -179,34 +183,34 @@ float getLux (){
   /* 
    * Get current light level 
    */ 
- float Lux =lightMeter.readLightLevel();
- return Lux;
+  float Lux =lightMeter.readLightLevel();
+  return Lux;
 }
 
 float getWeight(){
   /*
-  get current weight*/
-  unit = scale.get_units(), 10;
-  if (units<0)
-  {
+   * Get current weight
+   */
+  float units = scale.get_units(), 10;
+  if (units < 0) {
     units = 0.00
   }
-  float final_weight= (units * 0.001);
-  return final weight;
+  float final_weight = units * 0.001;
+  return final_weight;
 }
 
-void turnonfan(){
+void turnOnFan(){
   digitalWrite(fanPin, HIGH);
 }
 
-void  turnofffan(){
+void  turnOffFan(){
   digitalwrite(fanPin,LOW);
 }
 
-void turnonsprinkler(){
+void turnOnSprinkler(){
   digitalWrite(sprinklerPin, HIGH);
 }
 
-void turnofffan(){
+void turnOffSprinkler(){
   digitalwrite(sprinklerPin, LOW);
 }
