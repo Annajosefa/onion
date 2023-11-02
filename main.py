@@ -205,4 +205,4 @@ if __name__ == '__main__':
         }
         rows_ref.add(rows)
 
-        time.sleep(5)
+        time.sleep(7)
