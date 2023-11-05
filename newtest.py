@@ -2,6 +2,14 @@ from onionsense import OnionSense
 
 machine = OnionSense()
 
-print(machine.get_data())
+parameters = { 
+            'soil': 25.5, 
+            'humidity': 60.1, 
+            'temperature': 27.40, 
+            'light': 6700.0, 
+            } 
 
-machine.turn_on_fan()
+machine.update_parameters(parameters)
+
+
+
