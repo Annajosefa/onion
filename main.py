@@ -11,6 +11,9 @@ if __name__ == '__main__':
 
     fan_is_on = False
     sprinkler_is_on = False
+    light_is_on = False
+
+    paused = True
 
     notification_ready_1 = True
     notification_ready_2 = True
@@ -24,8 +27,27 @@ if __name__ == '__main__':
     last_notification_4 = datetime.datetime.now()
     last_notification_5 = datetime.datetime.now()
 
+    time_light_switched = datetime.datetime.now()
+
+
 
     while True:
+        if machine.machine_state:
+            machine.turn_on_light()
+            paused = False
+            light_is_on = True
+
+        time_since_last_start = datetime.datetime.now() - time_light_switched
+        if time_since_last_start >= datetime.timedelta(hours=12):
+            if light_is_on:
+                machine.turn_off_light()
+                light_is_on = False
+            else:
+                machine.turn_on_light()
+                light_is_on = True
+            time_light_Switched = datetime.datetime.now()
+
+
         parameters = machine.get_data()
         print(parameters)
         if not parameters ('success'):
@@ -119,6 +141,23 @@ if __name__ == '__main__':
             and (datetime.datetime.now() - last_notification_5) >= datetime.timedelta(minutes=30):
             notification_ready_5 = True
 
+        machine.update_parameters(parameters)
 
+        time.sleep(5)  
+    else:
+        if not paused:
+            paused = True
 
-        time.sleep(5)            
+        if fan_is_on:
+            machine.turn_off_fan()
+            fan_is_on= False
+
+        if sprinkler_is_on:
+            machine.turn_off_sprinkler()
+            sprinkler_is_on = False
+
+        if light_is_on:
+            machine.turn_off_light()
+            light_is_on = False
+
+        print('onionsense')          

@@ -5,6 +5,7 @@ from firebase_admin import messaging
 from urllib.request import urlopen
 import datetime
 import serial
+import RPi.GPIO as GPIO
 
 class OnionSense:
 
@@ -25,6 +26,12 @@ class OnionSense:
         self.arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
         # Enter all available commands here
         self.available_commands = [0, 1, 2, 3, 4, 5] 
+        self.machine_state = False
+        self.button_pin = 17
+        GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(self.button_pin, GPIO.IN, pull_up_down = GPIO.PULL_UP_DOWN)
+        GPIO.add_event_detect(self.button_pin, GPIO.RISING, callback = self._switch_state, bouncetime = 2000)
 
 
 
@@ -106,6 +113,22 @@ class OnionSense:
             
         return parameters
     
+    def get_weight(self):
+        '''
+        Explicit function calling weight in arduino
+        '''
+
+        self.send_command(7)
+        response = self.get_arduino_response()
+
+        while not response:
+            self.get_arduino_response()
+
+        try:
+            return float(response)
+        except:
+            return None
+        
 
 
     def update_parameters(self, parameters: dict):
@@ -122,11 +145,13 @@ class OnionSense:
             'light': lux, \n
             }
         '''
+        
+        
         data = {
             'soil': parameters['soil'],
             'humidity':parameters['humidity'],
             'temperature': parameters['temperature'],
-            'light': parameters ['lux'],
+            'light': parameters ['light'],
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
         self.parameter_reference.add(data)
@@ -240,6 +265,18 @@ class OnionSense:
         '''
         self.send_command(4)
 
+    def turn_on_light(self):
+        '''
+        Explicit function calling turnOnLight in arduino
+        '''
+        self.send_command(5)
+
+    def turn_off_light(self):
+        '''
+        Explicit function calling turnOffLight in arduino
+        '''
+        self.send_command(6)
+
 
 
     def get_internet_datetime(self)-> datetime.datetime:
@@ -254,4 +291,7 @@ class OnionSense:
         _datetime = datetime.datetime.striptime(datetime_str,'%Y-%m-%d %H:%M:%S')
         _datetime = datetime + datetime.timedelta(hours = 8)
         return _datetime
+    
+    def _switch_state(self, channel):
+        self.machine_state = not self.machine_state
     
