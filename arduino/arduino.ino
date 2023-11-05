@@ -1,12 +1,20 @@
+
 #include <dht.h> 
 #include "Arduino.h" 
 #include <Wire.h> 
 #include <BH1750.h> 
- 
+#include "HX711.h"
+
  
 dht DHT; 
 BH1750 lightMeter; 
- 
+
+HX711 scale;
+float calibration_factor = -392;
+float units;
+float ounces;
+
+
 int dhtPin = 6; 
 int proximitySensor1 = 7; 
 int proximitySensor2 = 8; 
@@ -32,8 +40,13 @@ void setup() {
   pinMode(proximitySensor3, INPUT_PULLUP); 
   pinMode(proximitySensor4, INPUT_PULLUP); 
   pinMode(proximitySensor5, INPUT_PULLUP); 
+
   pinMode(fanPin, OUTPUT); 
   pinMode(sprinklerPin, OUTPUT); 
+  pinMode(lightPin, OUTPUT);
+  
+  scale.set_scale(calibration_factor);
+  scale.tare();
  
   pinMode (A0, INPUT); 
   Wire.begin(); 
@@ -72,6 +85,21 @@ void loop(){
     turnOffSprinkler();
     current_command= -1;
   }
+
+  else if(current_command == 5){
+    turnOnLight();
+    current_command = -1;
+  }
+
+  else if (current_command == 6){
+    turnOffLight();
+    current_command = -1
+  }
+
+  else if (current_command == 7){
+    serial.println(getWeight());
+    current_command = -1
+  }
  
  
 } 
@@ -79,7 +107,7 @@ void loop(){
 void receiveCommand(){
   if(Serial.available()){
     int sent = Serial.readStringUntil('\n').toInt();
-    Serial.println("ok");S
+    Serial.println("ok");
     current_command = sent;   
   }
 }
@@ -175,7 +203,21 @@ float getLux (){
   float Lux =lightMeter.readLightLevel();
   return Lux;
 }
- 
+
+float getWeight(){
+  /*
+  Get cuurent weight
+  */
+  units = scale.get_units(), 10;
+  if (units < 0)
+  {
+    units = 0.00;
+  }
+  float final_weight = (units * 0.001);
+  return final_weight;
+}
+
+
 void turnOnFan(){
   digitalWrite(fanPin, HIGH);
 }
@@ -190,4 +232,12 @@ void turnOnSprinkler(){
  
 void turnOffSprinkler(){
   digitalWrite(sprinklerPin, LOW);
+}
+
+void turnOnLight(){
+  digitalWrite(lightPin, HIGH);
+}
+
+void turnOffLight(){
+  digitalWrite(lightPin, LOW)
 }
