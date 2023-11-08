@@ -22,7 +22,6 @@ class OnionSense:
         self.row_reference = db.collection('rows')
         self.harvest_reference = db.collection('harvests')
         self.user_reference = db.collection('users')
-
         self.arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
         # Enter all available commands here
         self.available_commands = [0, 1, 2, 3, 4, 5] 
@@ -30,7 +29,7 @@ class OnionSense:
         self.button_pin = 17
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.button_pin, GPIO.IN, pull_up_down = GPIO.PULL_UP_DOWN)
+        GPIO.setup(self.button_pin, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
         GPIO.add_event_detect(self.button_pin, GPIO.RISING, callback = self._switch_state, bouncetime = 2000)
 
 
@@ -177,11 +176,11 @@ class OnionSense:
         '''
 
         data = {
-            'r1': parameters['proximity_sensor_1'],
-            'r2': parameters['proximity_sensor_2'],
-            'r3': parameters['proximity_sensor_3'],
-            'r4': parameters['proximity_sensor_4'],
-            'r5': parameters['proximity_sensor_5'],
+            'r1': bool(parameters['r1']),
+            'r2': bool(parameters['r2']),
+            'r3': bool(parameters['r3']),
+            'r4': bool(parameters['r4']),
+            'r5': bool(parameters['r5']),
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
         self.row_reference.add(data)
@@ -199,7 +198,7 @@ class OnionSense:
             'amount': amount,
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
-        self.parameter_reference.add(data)
+        self.harvest_reference.add(data)
     
 
 
@@ -232,6 +231,7 @@ class OnionSense:
             ),
             tokens = self._get_user_tokens()
         )
+        messaging.send_multicast(message)
 
 
     

@@ -93,12 +93,12 @@ void loop(){
 
   else if (current_command == 6){
     turnOffLight();
-    current_command = -1
+    current_command = -1;
   }
 
   else if (current_command == 7){
-    serial.println(getWeight());
-    current_command = -1
+    Serial.println(getWeight());
+    current_command = -1;
   }
  
  
@@ -239,5 +239,5 @@ void turnOnLight(){
 }
 
 void turnOffLight(){
-  digitalWrite(lightPin, LOW)
+  digitalWrite(lightPin, LOW);
 }
