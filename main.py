@@ -143,7 +143,7 @@ if __name__ == '__main__':
 
         machine.update_parameters(parameters)
 
-        time.sleep(5)  
+        time.sleep(7)  
     else:
         if not paused:
             paused = True
