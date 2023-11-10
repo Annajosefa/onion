@@ -302,12 +302,14 @@ class OnionSense:
     def _switch_state(self, channel):
         if self.machine_state:
             self.machine_state = not self.machine_state
+        print(f"Machine State toggled to: {self.machine_state}")
 
 
 
     def _toggle_harvest_mode(self, channel):
         if self.machine_state:
             self.harvest_mode = not self.harvest_mode
+        print(f"Harvest Mode toggled to: {self.harvest_mode}")
 
 
 
@@ -315,4 +317,7 @@ class OnionSense:
         if self.harvest_mode:
             weight = self.get_weight()
             self.add_harvest(weight)
+            print(f"Weight confirmed: {weight}")
+        else:
+            print(f"Not in harvest mode!")
     

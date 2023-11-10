@@ -70,6 +70,12 @@ if __name__ == '__main__':
                     machine.turn_off_sprinkler()
                     sprinkler_is_on = False
 
+            machine.update_parameters(parameters)
+            time.sleep(7)  
+
+            if machine.harvest_mode:
+                continue
+            
             if parameters['r1'] == 0 and  notification_ready_1:
                 machine.send_notification(
                     title= 'Harvest Ready',
@@ -130,9 +136,6 @@ if __name__ == '__main__':
                 and (datetime.datetime.now() - last_notification_5) >= datetime.timedelta(minutes=30):
                 notification_ready_5 = True
 
-            machine.update_parameters(parameters)
-
-            time.sleep(7)  
         else:
             if not paused:
                 paused = True
