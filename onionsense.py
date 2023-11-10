@@ -309,7 +309,9 @@ class OnionSense:
     def _toggle_harvest_mode(self, channel):
         if self.machine_state:
             self.harvest_mode = not self.harvest_mode
-        print(f"Harvest Mode toggled to: {self.harvest_mode}")
+            print(f"Harvest Mode toggled to: {self.harvest_mode}")
+        else:
+            print(f"Machine is not turned on yet!")
 
 
 
