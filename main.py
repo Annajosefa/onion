@@ -29,8 +29,6 @@ if __name__ == '__main__':
 
     time_light_switched = datetime.datetime.now()
 
-
-
     while True:
         if machine.machine_state:
             machine.turn_on_light()
@@ -46,7 +44,6 @@ if __name__ == '__main__':
                     machine.turn_on_light()
                     light_is_on = True
                 time_light_Switched = datetime.datetime.now()
-
 
             parameters = machine.get_data()
             print(parameters)
@@ -85,8 +82,6 @@ if __name__ == '__main__':
                 and (datetime.datetime.now() - last_notification_1) >= datetime.timedelta(minutes=30):
                 notification_ready_1 = True
 
-
-
             if parameters['r2'] == 0 and  notification_ready_2:
                 machine.send_notification(
                     title= 'Harvest Ready',
@@ -98,8 +93,6 @@ if __name__ == '__main__':
             if not notification_ready_2 \
                 and (datetime.datetime.now() - last_notification_2) >= datetime.timedelta(minutes=30):
                 notification_ready_2 = True
-
-
 
             if parameters['r3'] == 0 and  notification_ready_3:
                 machine.send_notification(
@@ -113,8 +106,6 @@ if __name__ == '__main__':
                 and (datetime.datetime.now() - last_notification_3) >= datetime.timedelta(minutes=30):
                 notification_ready_3 = True
 
-
-                
             if parameters['r4'] == 0 and  notification_ready_4:
                 machine.send_notification(
                     title= 'Harvest Ready',
@@ -126,8 +117,6 @@ if __name__ == '__main__':
             if not notification_ready_4 \
                 and (datetime.datetime.now() - last_notification_4) >= datetime.timedelta(minutes=30):
                 notification_ready_4 = True
-
-
 
             if parameters['r5'] == 0 and  notification_ready_5:
                 machine.send_notification(
@@ -160,4 +149,4 @@ if __name__ == '__main__':
                 machine.turn_off_light()
                 light_is_on = False
 
-            print('onionsense')          
+            print('TMachine Turned Off!')          

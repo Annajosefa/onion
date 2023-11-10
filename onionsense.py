@@ -41,10 +41,6 @@ class OnionSense:
 
 
 
-
-
-
-
     def send_command(self, command: int):
         '''
         Send command to Arduino
@@ -301,14 +297,19 @@ class OnionSense:
         _datetime = datetime + datetime.timedelta(hours = 8)
         return _datetime
     
+
+
     def _switch_state(self, channel):
         if self.machine_state:
             self.machine_state = not self.machine_state
 
 
+
     def _toggle_harvest_mode(self, channel):
         if self.machine_state:
             self.harvest_mode = not self.harvest_mode
+
+
 
     def _confirm_harvest(self, channel):
         if self.harvest_mode:
