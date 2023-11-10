@@ -24,13 +24,24 @@ class OnionSense:
         self.user_reference = db.collection('users')
         self.arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
         # Enter all available commands here
-        self.available_commands = [0, 1, 2, 3, 4, 5] 
+        self.available_commands = [0, 1, 2, 3, 4, 5, 6, 7] 
         self.machine_state = False
+        self.harvest_mode = False
+        self.harvest_toggle_button_pin = 10
+        self.confirm_weight_pin = 11
         self.button_pin = 17
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.button_pin, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
+        GPIO.setup(self.harvest_toggle_button_pin, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
+        GPIO.setup(self.confirm_weight_pin, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
         GPIO.add_event_detect(self.button_pin, GPIO.RISING, callback = self._switch_state, bouncetime = 2000)
+        GPIO.add_event_detect(self.harvest_toggle_button_pin, GPIO.RISING, callback = self._toggle_harvest_mode, bouncetime = 2000)
+        GPIO.add_event_detect(self.confirm_weight_pin, GPIO.RISING, callback = self._confirm_harvest, bouncetime = 2000)
+
+
+
+
 
 
 
@@ -105,10 +116,8 @@ class OnionSense:
                 'r5': proximity_sensor_5,
                 'success': True
             }
-        except:
-            parameters = {
-                'success':False
-            }
+        except Exception as e:
+            print(e)
             
         return parameters
     
@@ -293,5 +302,16 @@ class OnionSense:
         return _datetime
     
     def _switch_state(self, channel):
-        self.machine_state = not self.machine_state
+        if self.machine_state:
+            self.machine_state = not self.machine_state
+
+
+    def _toggle_harvest_mode(self, channel):
+        if self.machine_state:
+            self.harvest_mode = not self.harvest_mode
+
+    def _confirm_harvest(self, channel):
+        if self.harvest_mode:
+            weight = self.get_weight()
+            self.add_harvest(weight)
     

@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
             parameters = machine.get_data()
             print(parameters)
-            if not parameters ('success'):
+            if not parameters ['success']:
                 continue
 
             if parameters['temperature'] > 25:
