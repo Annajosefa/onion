@@ -188,7 +188,7 @@ class OnionSense:
             'r5': bool(parameters['r5']),
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
-        self.row_reference.add(data)
+        self.row_reference.document('current').set(data)
 
 
 
