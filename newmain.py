@@ -131,20 +131,20 @@ class OnionSense:
         parameters(dict): Dict containing harvest rows \n
         Sample format:
             parameters = {\n
-                'r1': (proximity_sensor_1),
-                'r2': (proximity_sensor_2),
-                'r3': (proximity_sensor_3),
-                'r4': (proximity_sensor_4),
-                'r5': (proximity_sensor_5),
+                'r1': proximity_sensor_1, \n
+                'r2': proximity_sensor_2, \n
+                'r3': proximity_sensor_3, \n
+                'r4': proximity_sensor_4, \n
+                'r5': proximity_sensor_5, \n
         }
         '''
 
         data = {
-            'r1': parameters[proximity_sensor_1],
-            'r2': parameters[proximity_sensor_2],
-            'r3': parameters[proximity_sensor_3],
-            'r4': parameters[proximity_sensor_4],
-            'r5': parameters[proximity_sensor_5],
+            'r1': parameters['proximity_sensor_1'],
+            'r2': parameters['proximity_sensor_2'],
+            'r3': parameters['proximity_sensor_3'],
+            'r4': parameters['proximity_sensor_4'],
+            'r5': parameters['proximity_sensor_5'],
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
         self.row_reference.add(data)
