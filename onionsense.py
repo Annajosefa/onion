@@ -6,6 +6,7 @@ from urllib.request import urlopen
 import datetime
 import serial
 import RPi.GPIO as GPIO
+import time
 
 class OnionSense:
 
@@ -123,6 +124,7 @@ class OnionSense:
         '''
 
         self.send_command(7)
+        time.sleep(5)
         response = self.get_arduino_response()
 
         while not response:
