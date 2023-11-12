@@ -122,18 +122,22 @@ class OnionSense:
         '''
         Explicit function calling weight in arduino
         '''
-
         self.send_command(7)
-        time.sleep(5)
+        time.sleep(3)
         response = self.get_arduino_response()
-
-        while not response:
-            self.get_arduino_response()
-
-        try:
-            return float(response)
+        try: 
+            weight = float(response)
         except:
-            return None
+            while not response:
+                response = self.get_arduino_response()
+                if response:
+                    weight = float(response)
+                    break 
+                
+        if weight <= 0:
+            return self.get_weight()
+
+        return weight
         
 
 
