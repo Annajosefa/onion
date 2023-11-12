@@ -217,10 +217,9 @@ float getWeight(){
   /*
   Get cuurent weight
   */
-  LoadCell.tareNoDelay();
-  delay(500);
-  float weight = LoadCell.getData()
-  return final_weight;
+  LoadCell.update();
+  float weight = LoadCell.getData();
+  return weight;
 }
 
 
