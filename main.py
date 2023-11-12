@@ -1,208 +1,155 @@
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
-from firebase_admin import messaging
+from onionsense import OnionSense
 
-import datetime
-import serial
 import time
-
-
-cred = credentials.Certificate('account.json')
-app = firebase_admin.initialize_app(cred)
-db = firestore.client()
-
-parameters_ref = db.collection('parameters')
-rows_ref = db.collection('rows')
-harvests_ref = db.collection('harvests')
-users_ref= db.collection('users')
-
-arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
-
-
-notif_row1 = False
-notif_row1_start = datetime.datetime.now()
- 
-notif_row2= False
-notif_row2_start = datetime.datetime.now()
-
-notif_row3 = False
-notif_row3_start = datetime.datetime.now()
-
-notif_row4 = False
-notif_row4_start = datetime.datetime.now()
-
-notif_row5 = False
-notif_row5_start = datetime.datetime.now()
-
-def get_conditions():
-    while True:
-        arduino.write(bytes('0\n','utf-8'))
-        response = arduino.readline().decode('utf-8').rstrip()
-        if response and response !='92':
-            return response
-        
-def turn_on_fan():
-    while True:
-        arduino.write(bytes('1/n','utf-8'))
-        response = arduino.readline().decode('utf-8').rstrip()
-        if response:
-            return response
-        
-def turn_off_fan():
-    while True:
-        arduino.write(bytes('2/n','utf-8'))
-        response = arduino.readline().decode('utf-8').rstrip()
-        if response:
-            return response
-        
-def turn_on_sprinkler():
-    while True:
-        arduino.write(bytes('3/n','utf-8'))
-        response = arduino.readline().decode('utf-8').rstrip()
-        if response:
-            return response
-
-def turn_off_sprinkler():
-    while True:
-        arduino.write(bytes('4/n','utf-8'))
-        response = arduino.readline().decode('utf-8').rstrip()
-        if response:
-            return response
-
-        
-def get_keys():
-    keys = []
-    users = users_ref.stream()
-    
-    for user in users:
-        keys.append(user.id)
-    return keys
-
-def send_notification(title, body):
-    message = messaging.MulticastMessage(
-        notification=messaging.Notification(
-            title= title,
-            body= body,
-        ),
-        tokens= get_keys()
-    )
+import datetime
 
 if __name__ == '__main__':
+    '''
+    Entry point for program
+    '''
+    machine = OnionSense()
+
+    fan_is_on = False
+    sprinkler_is_on = False
+    light_is_on = False
+
+    paused = True
+
+    notification_ready_1 = True
+    notification_ready_2 = True
+    notification_ready_3 = True
+    notification_ready_4 = True
+    notification_ready_5 = True
+
+    last_notification_1 = datetime.datetime.now()
+    last_notification_2 = datetime.datetime.now()
+    last_notification_3 = datetime.datetime.now()
+    last_notification_4 = datetime.datetime.now()
+    last_notification_5 = datetime.datetime.now()
+
+    time_light_switched = datetime.datetime.now()
 
     while True:
-        response = get_conditions()
-        data = response.split(' ')
-        print (data)
-        print (response)
-        temperature = float(data[0])
-        humidity = float(data[1])
-        soil_moisture = float(data[2])*100
-        lux = float(data[3])
-        proximity_sensor_1 = int(data[4])
-        proximity_sensor_2 = int(data[5])
-        proximity_sensor_3 = int(data[6])
-        proximity_sensor_4 = int(data[7])
-        proximity_sensor_5 = int(data[8])
-        
-        if temperature > 26:
-           print(turn_on_fan())
+        if machine.machine_state:
+            machine.turn_on_light()
+            paused = False
+            light_is_on = True
+
+            time_since_last_start = datetime.datetime.now() - time_light_switched
+            if time_since_last_start >= datetime.timedelta(hours=12):
+                if light_is_on:
+                    machine.turn_off_light()
+                    light_is_on = False
+                else:
+                    machine.turn_on_light()
+                    light_is_on = True
+                time_light_Switched = datetime.datetime.now()
+
+            parameters = machine.get_data()
+            print(parameters)
+            if not parameters ['success']:
+                continue
+
+            if parameters['temperature'] > 25:
+                if not fan_is_on:
+                    machine.turn_on_fan()
+                    fan_is_on = True
+
+            else:
+                if fan_is_on:
+                    machine.turn_off_fan()
+                    fan_is_on = False
+
+            if parameters['soil']< 30:
+                if not sprinkler_is_on:
+                    machine.turn_on_sprinkler()
+                    sprinkler_is_on = True
+
+            else:
+                if sprinkler_is_on:
+                    machine.turn_off_sprinkler()
+                    sprinkler_is_on = False
+
+            machine.update_parameters(parameters)
+            time.sleep(7)  
+
+            if machine.harvest_mode:
+                continue
+            
+            if parameters['r1'] == 0 and  notification_ready_1:
+                machine.send_notification(
+                    title= 'Harvest Ready',
+                    body= 'Harvest is ready in Row 1. Please collect!'
+                )
+                notification_ready_1 = False
+                last_notification_1 = datetime.date.now()
+
+            if not notification_ready_1 \
+                and (datetime.datetime.now() - last_notification_1) >= datetime.timedelta(minutes=30):
+                notification_ready_1 = True
+
+            if parameters['r2'] == 0 and  notification_ready_2:
+                machine.send_notification(
+                    title= 'Harvest Ready',
+                    body= 'Harvest is ready in Row 2. Please collect!'
+                )
+                notification_ready_2 = False
+                last_notification_2 = datetime.date.now()
+
+            if not notification_ready_2 \
+                and (datetime.datetime.now() - last_notification_2) >= datetime.timedelta(minutes=30):
+                notification_ready_2 = True
+
+            if parameters['r3'] == 0 and  notification_ready_3:
+                machine.send_notification(
+                    title= 'Harvest Ready',
+                    body= 'Harvest is ready in Row 3. Please collect!'
+                )
+                notification_ready_3 = False
+                last_notification_3 = datetime.date.now()
+
+            if not notification_ready_3 \
+                and (datetime.datetime.now() - last_notification_3) >= datetime.timedelta(minutes=30):
+                notification_ready_3 = True
+
+            if parameters['r4'] == 0 and  notification_ready_4:
+                machine.send_notification(
+                    title= 'Harvest Ready',
+                    body= 'Harvest is ready in Row 4. Please collect!'
+                )
+                notification_ready_4 = False
+                last_notification_4 = datetime.date.now()
+
+            if not notification_ready_4 \
+                and (datetime.datetime.now() - last_notification_4) >= datetime.timedelta(minutes=30):
+                notification_ready_4 = True
+
+            if parameters['r5'] == 0 and  notification_ready_5:
+                machine.send_notification(
+                    title= 'Harvest Ready',
+                    body= 'Harvest is ready in Row 5. Please collect!'
+                )
+                notification_ready_5 = False
+                last_notification_5 = datetime.date.now()
+
+            if not notification_ready_5 \
+                and (datetime.datetime.now() - last_notification_5) >= datetime.timedelta(minutes=30):
+                notification_ready_5 = True
+
         else:
-            temperature < 25
-            print(turn_off_fan())
-           
-        if humidity > 50:
-           print(turn_on_fan())
-        else:
-            humidity < 70
-            print(turn_off_fan())
+            if not paused:
+                paused = True
 
-        if soil_moisture < 60:
-            print(turn_on_sprinkler())  
-        elif soil_moisture > 60:
-           print(turn_off_sprinkler())
-        
-        if proximity_sensor_1 == 1:
-            if not notif_row1:
-                send_notification(
-                    'Harvest Ready',
-                    'Row 1 is ready to harvest. Please check'
-                )
-                notif_row1 = True
-                notif_row1_start = datetime.datetime.now()
+            if fan_is_on:
+                machine.turn_off_fan()
+                fan_is_on= False
 
-        if (datetime.datetime.now()- notif_row1_start) >= datetime.timedelta(minutes = 30):
-            notif_row1= False
+            if sprinkler_is_on:
+                machine.turn_off_sprinkler()
+                sprinkler_is_on = False
 
-        if proximity_sensor_2 == 1:
-           if not notif_row2:
-                send_notification(
-                    'Harvest Ready',
-                    'Row 2 is ready to harvest. Please check'
-                )
-                notif_row2 = True
-                notif_row2_start = datetime.datetime.now()
-            
+            if light_is_on:
+                machine.turn_off_light()
+                light_is_on = False
 
-        if (datetime.datetime.now()- notif_row2_start) >= datetime.timedelta(minutes = 30):
-            notif_row2= False
-            
-        if proximity_sensor_3 == 1:
-            if not notif_row3:
-                send_notification(
-                    'Harvest Ready',
-                    'Row 3 is ready to harvest. Please check'
-                )
-                notif_row3 = True
-                notif_row3_start = datetime.datetime.now()
-            
-
-        if (datetime.datetime.now()- notif_row3_start) >= datetime.timedelta(minutes = 30):
-            notif_row3= False
-
-        if proximity_sensor_4 == 1:
-            if not notif_row4:
-                send_notification(
-                    'Harvest Ready',
-                    'Row 4 is ready to harvest. Please check'
-                )
-                notif_row4 = True
-                notif_row4_start = datetime.datetime.now()
-            
-
-        if (datetime.datetime.now()- notif_row4_start) >= datetime.timedelta(minutes = 30):
-            notif_row4= False
-
-        if proximity_sensor_5 == 1:
-          if not notif_row5:
-                send_notification(
-                    'Harvest Ready',
-                    'Row 5 is ready to harvest. Please check'
-                )
-                notif_row5 = True
-                notif_row5_start = datetime.datetime.now()
-            
-
-        if (datetime.datetime.now()- notif_row5_start) >= datetime.timedelta(minutes = 30):
-            notif_row5= False
-
-        data = {
-            'soil': soil_moisture,
-            'humidity': humidity,
-            'temperature': temperature,
-            'light': lux,
-            'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
-        }
-        parameters_ref.add(data)
-        
-        rows = {
-            'r1': bool(proximity_sensor_1),
-            'r2': bool(proximity_sensor_2),
-            'r3': bool(proximity_sensor_3),
-            'r4': bool(proximity_sensor_4),
-            'r5': bool(proximity_sensor_5),
-            'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
-        }
-        rows_ref.add(rows)
-
-        time.sleep(7)
+            print('TMachine Turned Off!')          

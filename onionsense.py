@@ -2,26 +2,44 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from firebase_admin import messaging
-
+from urllib.request import urlopen
 import datetime
 import serial
-import time
+import RPi.GPIO as GPIO
 
 class OnionSense:
 
+
     def __init__(self) :
-         '''
+        '''
         Initialize a machine object
         '''
-         cred = credentials.Certificate('account.json')
-         app = firebase_admin.initialize_app(cred)
-         db = firestore.client()
-         
-         parameters_ref = db.collection('parameters')
-         rows_ref = db.collection('rows')
-         harvests_ref = db.collection('harvests')
-         users_ref= db.collection('users')
-         arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
+        cred = credentials.Certificate('account.json')
+        app = firebase_admin.initialize_app(cred)
+        db = firestore.client()
+        
+        self.parameter_reference = db.collection('parameters')
+        self.row_reference = db.collection('rows')
+        self.harvest_reference = db.collection('harvests')
+        self.user_reference = db.collection('users')
+        self.arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
+        # Enter all available commands here
+        self.available_commands = [0, 1, 2, 3, 4, 5, 6, 7] 
+        self.machine_state = False
+        self.harvest_mode = False
+        self.harvest_toggle_button_pin = 10
+        self.confirm_weight_pin = 11
+        self.button_pin = 17
+        GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(self.button_pin, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
+        GPIO.setup(self.harvest_toggle_button_pin, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
+        GPIO.setup(self.confirm_weight_pin, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
+        GPIO.add_event_detect(self.button_pin, GPIO.RISING, callback = self._switch_state, bouncetime = 2000)
+        GPIO.add_event_detect(self.harvest_toggle_button_pin, GPIO.RISING, callback = self._toggle_harvest_mode, bouncetime = 2000)
+        GPIO.add_event_detect(self.confirm_weight_pin, GPIO.RISING, callback = self._confirm_harvest, bouncetime = 2000)
+
+
 
     def send_command(self, command: int):
         '''
@@ -32,11 +50,17 @@ class OnionSense:
         command(int): Command to send
         '''
         if(command in self.available_commands):
-            self.arduino.write(bytes(str(command)+'\n','utf-8'))
+            while True:
+                self.arduino.write(bytes(str(command)+'\n','utf-8'))
+                response = self.get_arduino_response()
+                if (response  == 'ok'):
+                    break
         else:
             raise Exception('Unknown command')
     
-    def get_arduino_response(self)->str:
+
+
+    def get_arduino_response(self) -> str:
         '''
         Get arduino serial response
 
@@ -44,14 +68,14 @@ class OnionSense:
         response(str): Arduino response
         '''
         try:
-            response = self.arduino.readline().decode('utf-8').rstrip
+            response = self.arduino.readline().decode('utf-8').rstrip()
         except UnicodeDecodeError:
-            response = self.arduino.readline().decode('utf-8').rstrip
+            response = self.arduino.readline().decode('utf-8').rstrip()
         return response
     
 
     
-    def get_data(self)-> dict:
+    def get_data(self) -> dict:
         '''
         Get current data from sensors
 
@@ -66,37 +90,52 @@ class OnionSense:
 
         data = response.split()
         try:
-             humidity = float(data[1])
-             soil_moisture = float(data[2])*100
-             lux = float(data[3])
-             proximity_sensor_1 = int(data[4])
-             proximity_sensor_2 = int(data[5])
-             proximity_sensor_3 = int(data[6])
-             proximity_sensor_4 = int(data[7])
-             proximity_sensor_5 = int(data[8])
+            temperature = float(data[0])
+            humidity = float(data[1])
+            soil_moisture = float(data[2]) * 100
+            lux = float(data[3])
+            proximity_sensor_1 = int(data[4])
+            proximity_sensor_2 = int(data[5])
+            proximity_sensor_3 = int(data[6])
+            proximity_sensor_4 = int(data[7])
+            proximity_sensor_5 = int(data[8])
              
-             parameters = {
-                 'soil': soil_moisture,
-                 'humidity': humidity,
-                 'temperature': temperature,
-                 'light': lux,
-                 'r1': (proximity_sensor_1),
-                 'r2': (proximity_sensor_2),
-                 'r3': (proximity_sensor_3),
-                 'r4': (proximity_sensor_4),
-                 'r5': (proximity_sensor_5),
-                 'success': True
-             }
-             
-        except:
             parameters = {
-             'success':False
-             }
+                'soil': soil_moisture,
+                'humidity': humidity,
+                'temperature': temperature,
+                'light': lux,
+                'r1': proximity_sensor_1,
+                'r2': proximity_sensor_2,
+                'r3': proximity_sensor_3,
+                'r4': proximity_sensor_4,
+                'r5': proximity_sensor_5,
+                'success': True
+            }
+        except Exception as e:
+            print(e)
+            
         return parameters
     
+    def get_weight(self):
+        '''
+        Explicit function calling weight in arduino
+        '''
+
+        self.send_command(7)
+        response = self.get_arduino_response()
+
+        while not response:
+            self.get_arduino_response()
+
+        try:
+            return float(response)
+        except:
+            return None
+        
 
 
-    def update_parameters(self, parameters:dict):
+    def update_parameters(self, parameters: dict):
         '''
         Add new parameter entry in firebase
 
@@ -110,11 +149,13 @@ class OnionSense:
             'light': lux, \n
             }
         '''
+        
+        
         data = {
             'soil': parameters['soil'],
             'humidity':parameters['humidity'],
             'temperature': parameters['temperature'],
-            'light': parameters ['lux'],
+            'light': parameters ['light'],
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
         self.parameter_reference.add(data)
@@ -140,14 +181,22 @@ class OnionSense:
         '''
 
         data = {
+<<<<<<< HEAD:newmain.py
             'r1': parameters['proximity_sensor_1'],
             'r2': parameters['proximity_sensor_2'],
             'r3': parameters['proximity_sensor_3'],
             'r4': parameters['proximity_sensor_4'],
             'r5': parameters['proximity_sensor_5'],
+=======
+            'r1': bool(parameters['r1']),
+            'r2': bool(parameters['r2']),
+            'r3': bool(parameters['r3']),
+            'r4': bool(parameters['r4']),
+            'r5': bool(parameters['r5']),
+>>>>>>> c46d0c9de74d25596b658e7a43bd85800a1fdb36:onionsense.py
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
-        self.row_reference.add(data)
+        self.row_reference.document('current').set(data)
 
 
 
@@ -162,11 +211,11 @@ class OnionSense:
             'amount': amount,
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
-        self.parameter_reference.add(data)
+        self.harvest_reference.add(data)
     
 
 
-    def _get_user_token(self)-> list:
+    def _get_user_tokens(self) -> list:
         '''
         Get all existing user tokens from firebase
 
@@ -195,6 +244,8 @@ class OnionSense:
             ),
             tokens = self._get_user_tokens()
         )
+        messaging.send_multicast(message)
+
 
     
     def turn_on_fan(self):
@@ -204,11 +255,14 @@ class OnionSense:
         self.send_command(1)
 
 
+
     def turn_off_fan(self):
         '''
         Explicit function calling turnOffFan in arduino
         '''
         self.send_command(2)
+
+
 
     def turn_on_sprinkler(self):
         '''
@@ -216,11 +270,27 @@ class OnionSense:
         '''
         self.send_command(3)
 
+
+
     def turn_off_sprinkler(self):
         '''
         Explicit function turnOffSprinkler
         '''
         self.send_command(4)
+
+    def turn_on_light(self):
+        '''
+        Explicit function calling turnOnLight in arduino
+        '''
+        self.send_command(5)
+
+    def turn_off_light(self):
+        '''
+        Explicit function calling turnOffLight in arduino
+        '''
+        self.send_command(6)
+
+
 
     def get_internet_datetime(self)-> datetime.datetime:
         '''
@@ -236,4 +306,28 @@ class OnionSense:
         return _datetime
     
 
- 
+
+    def _switch_state(self, channel):
+        if self.machine_state:
+            self.machine_state = not self.machine_state
+        print(f"Machine State toggled to: {self.machine_state}")
+
+
+
+    def _toggle_harvest_mode(self, channel):
+        if self.machine_state:
+            self.harvest_mode = not self.harvest_mode
+            print(f"Harvest Mode toggled to: {self.harvest_mode}")
+        else:
+            print(f"Machine is not turned on yet!")
+
+
+
+    def _confirm_harvest(self, channel):
+        if self.harvest_mode:
+            weight = self.get_weight()
+            self.add_harvest(weight)
+            print(f"Weight confirmed: {weight}")
+        else:
+            print(f"Not in harvest mode!")
+    
