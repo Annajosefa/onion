@@ -12,7 +12,7 @@ BH1750 lightMeter;
 const int HX711_dout = 12;
 const int HX711_sck = 13; 
 HX711_ADC LoadCell(HX711_dout, HX711_sck);
-float calibrationFactor = 409.11;
+float calibrationFactor = 424.92;
 float units;
 float ounces;
 
@@ -126,7 +126,7 @@ void sendState(){
   /*
    * Get all conditions 
    */
-
+  DHT.read22(dhtPin);
  String message = String(getTemperature()) + " " + String(getHumidity()) + " " + String(getAverageMoisturePercentage()) + " " + String(getLux()) + " " + String(getProximitySensor1()) + " " + String(getProximitySensor2()) + " " + String(getProximitySensor3()) + " " + String(getProximitySensor4()) + " " + String(getProximitySensor5()); 
 Serial.println(message);
 } 

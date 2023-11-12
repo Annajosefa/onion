@@ -28,8 +28,8 @@ class OnionSense:
         self.available_commands = [0, 1, 2, 3, 4, 5, 6, 7] 
         self.machine_state = False
         self.harvest_mode = False
-        self.harvest_toggle_button_pin = 10
-        self.confirm_weight_pin = 11
+        self.harvest_toggle_button_pin = 11
+        self.confirm_weight_pin = 10
         self.button_pin = 17
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
