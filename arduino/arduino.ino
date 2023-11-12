@@ -3,14 +3,16 @@
 #include "Arduino.h" 
 #include <Wire.h> 
 #include <BH1750.h> 
-#include "HX711.h"
+#include <HX711_ADC.h>
 
  
 dht DHT; 
 BH1750 lightMeter; 
 
-HX711 scale;
-float calibration_factor = -392;
+const int HX711_dout = 12;
+const int HX711_sck = 13; 
+HX711_ADC LoadCell(HX711_dout, HX711_sck);
+float calibrationFactor = 409.11;
 float units;
 float ounces;
 
@@ -45,16 +47,23 @@ void setup() {
   pinMode(sprinklerPin, OUTPUT); 
   pinMode(lightPin, OUTPUT);
   
-  scale.set_scale(calibration_factor);
-  scale.tare();
+  unsigned long stabilizingtime = 2000; 
+  boolean _tare = true; 
+  LoadCell.start(stabilizingtime, _tare);
+  if (LoadCell.getTareTimeoutFlag()) {
+    // Serial.println("Timeout, check MCU>HX711 wiring and pin designations");
+    while (1);
+  }
+  else {
+    LoadCell.setCalFactor(calibrationFactor);
+    // Serial.println("Startup is complete");
+  }
  
   pinMode (A0, INPUT); 
   Wire.begin(); 
   lightMeter.begin(); 
  
 } 
- 
- 
  
 void loop(){ 
   if(current_command == -1){ 
@@ -208,12 +217,9 @@ float getWeight(){
   /*
   Get cuurent weight
   */
-  units = scale.get_units(), 10;
-  if (units < 0)
-  {
-    units = 0.00;
-  }
-  float final_weight = (units * 0.001);
+  LoadCell.tareNoDelay();
+  delay(500);
+  float weight = LoadCell.getData()
   return final_weight;
 }
 

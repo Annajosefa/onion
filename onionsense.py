@@ -181,19 +181,11 @@ class OnionSense:
         '''
 
         data = {
-<<<<<<< HEAD:newmain.py
-            'r1': parameters['proximity_sensor_1'],
-            'r2': parameters['proximity_sensor_2'],
-            'r3': parameters['proximity_sensor_3'],
-            'r4': parameters['proximity_sensor_4'],
-            'r5': parameters['proximity_sensor_5'],
-=======
             'r1': bool(parameters['r1']),
             'r2': bool(parameters['r2']),
             'r3': bool(parameters['r3']),
             'r4': bool(parameters['r4']),
             'r5': bool(parameters['r5']),
->>>>>>> c46d0c9de74d25596b658e7a43bd85800a1fdb36:onionsense.py
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
         self.row_reference.document('current').set(data)
