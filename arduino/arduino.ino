@@ -117,7 +117,7 @@ void sendState(){
   /*
    * Get all conditions 
    */
- 
+ DHT.read22(dhtPin);
  String message = String(getTemperature()) + " " + String(getHumidity()) + " " + String(getAverageMoisturePercentage()) + " " + String(getLux()) + " " + String(getProximitySensor1()) + " " + String(getProximitySensor2()) + " " + String(getProximitySensor3()) + " " + String(getProximitySensor4()) + " " + String(getProximitySensor5()); 
 Serial.println(message);
 } 
