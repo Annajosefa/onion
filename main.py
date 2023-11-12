@@ -82,7 +82,7 @@ if __name__ == '__main__':
                     body= 'Harvest is ready in Row 1. Please collect!'
                 )
                 notification_ready_1 = False
-                last_notification_1 = datetime.date.now()
+                last_notification_1 = datetime.datetime.now()
 
             if not notification_ready_1 \
                 and (datetime.datetime.now() - last_notification_1) >= datetime.timedelta(minutes=30):
