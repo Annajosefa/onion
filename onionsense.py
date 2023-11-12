@@ -306,8 +306,7 @@ class OnionSense:
 
 
     def _switch_state(self, channel):
-        if self.machine_state:
-            self.machine_state = not self.machine_state
+        self.machine_state = not self.machine_state
         print(f"Machine State toggled to: {self.machine_state}")
 
 
