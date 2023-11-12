@@ -47,6 +47,7 @@ void setup() {
   pinMode(sprinklerPin, OUTPUT); 
   pinMode(lightPin, OUTPUT);
   
+  LoadCell.begin();
   unsigned long stabilizingtime = 2000; 
   boolean _tare = true; 
   LoadCell.start(stabilizingtime, _tare);
@@ -217,11 +218,12 @@ float getWeight(){
   /*
   Get cuurent weight
   */
+  float weight = 0;
   static boolean newDataReady = 0;
   while(true){
     if (LoadCell.update()) newDataReady = true;
     if (newDataReady) {
-      float weight = LoadCell.getData();
+      weight = LoadCell.getData();
       break;
     }
   }
