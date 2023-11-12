@@ -136,7 +136,7 @@ class OnionSense:
                 
         if weight <= 0:
             return self.get_weight()
-
+        print(weight)
         return weight
         
 
