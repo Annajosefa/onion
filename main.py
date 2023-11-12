@@ -31,9 +31,10 @@ if __name__ == '__main__':
 
     while True:
         if machine.machine_state:
-            machine.turn_on_light()
-            paused = False
-            light_is_on = True
+            if paused:
+                machine.turn_on_light()
+                paused = False
+                light_is_on = True
 
             time_since_last_start = datetime.datetime.now() - time_light_switched
             if time_since_last_start >= datetime.timedelta(hours=12):
