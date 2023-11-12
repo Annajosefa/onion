@@ -71,7 +71,7 @@ if __name__ == '__main__':
                     sprinkler_is_on = False
 
             machine.update_parameters(parameters)
-            time.sleep(7)  
+            time.sleep(5)  
 
             if machine.harvest_mode:
                 continue
@@ -152,4 +152,4 @@ if __name__ == '__main__':
                 machine.turn_off_light()
                 light_is_on = False
 
-            print('TMachine Turned Off!')          
+         

@@ -1,22 +1,17 @@
-
 #include <dht.h> 
 #include "Arduino.h" 
 #include <Wire.h> 
 #include <BH1750.h> 
-#include <HX711_ADC.h>
-
+#include <HX711.h>
+ 
  
 dht DHT; 
 BH1750 lightMeter; 
-
-const int HX711_dout = 12;
-const int HX711_sck = 13; 
-HX711_ADC LoadCell(HX711_dout, HX711_sck);
-float calibrationFactor = 424.92;
-float units;
-float ounces;
-
-
+ 
+HX711 scale;
+float w1, w2, previous = 0;
+ 
+ 
 int dhtPin = 6; 
 int proximitySensor1 = 7; 
 int proximitySensor2 = 8; 
@@ -26,7 +21,8 @@ int proximitySensor5 = 11;
 int lightPin = 3; 
 int fanPin = 4; 
 int sprinklerPin = 5; 
- 
+uint8_t dataPin = 12;
+uint8_t clockPin = 13;
 const int sensorPin1 = A0; 
 const int sensorPin2 = A1; 
 const int sensorPin3 = A2; 
@@ -37,32 +33,27 @@ int current_command = -1;
  
 void setup() { 
   Serial.begin(9600); 
+ 
+  scale.begin(dataPin, clockPin);
+ 
   pinMode(proximitySensor1, INPUT_PULLUP); 
   pinMode(proximitySensor2, INPUT_PULLUP); 
   pinMode(proximitySensor3, INPUT_PULLUP); 
   pinMode(proximitySensor4, INPUT_PULLUP); 
   pinMode(proximitySensor5, INPUT_PULLUP); 
-
+ 
   pinMode(fanPin, OUTPUT); 
   pinMode(sprinklerPin, OUTPUT); 
   pinMode(lightPin, OUTPUT);
-  
-  LoadCell.begin();
-  unsigned long stabilizingtime = 2000; 
-  boolean _tare = true; 
-  LoadCell.start(stabilizingtime, _tare);
-  if (LoadCell.getTareTimeoutFlag()) {
-    // Serial.println("Timeout, check MCU>HX711 wiring and pin designations");
-    while (1);
-  }
-  else {
-    LoadCell.setCalFactor(calibrationFactor);
-    // Serial.println("Startup is complete");
-  }
+ 
  
   pinMode (A0, INPUT); 
   Wire.begin(); 
-  lightMeter.begin(); 
+  lightMeter.begin();
+ 
+ 
+  scale.set_scale(409.07428571);
+  scale.tare(); 
  
 } 
  
@@ -95,19 +86,19 @@ void loop(){
     turnOffSprinkler();
     current_command= -1;
   }
-
+ 
   else if(current_command == 5){
     turnOnLight();
     current_command = -1;
   }
-
+ 
   else if (current_command == 6){
     turnOffLight();
     current_command = -1;
   }
-
+ 
   else if (current_command == 7){
-    Serial.println(getWeight());
+    getWeight();
     current_command = -1;
   }
  
@@ -126,7 +117,7 @@ void sendState(){
   /*
    * Get all conditions 
    */
-  DHT.read22(dhtPin);
+ 
  String message = String(getTemperature()) + " " + String(getHumidity()) + " " + String(getAverageMoisturePercentage()) + " " + String(getLux()) + " " + String(getProximitySensor1()) + " " + String(getProximitySensor2()) + " " + String(getProximitySensor3()) + " " + String(getProximitySensor4()) + " " + String(getProximitySensor5()); 
 Serial.println(message);
 } 
@@ -213,24 +204,25 @@ float getLux (){
   float Lux =lightMeter.readLightLevel();
   return Lux;
 }
-
-float getWeight(){
+ 
+void getWeight(){
   /*
   Get cuurent weight
   */
-  float weight = 0;
-  static boolean newDataReady = 0;
-  while(true){
-    if (LoadCell.update()) newDataReady = true;
-    if (newDataReady) {
-      weight = LoadCell.getData();
-      break;
-    }
+  w1 = scale.get_units(10);
+  delay(100);
+  w2 = scale.get_units();
+  while (abs(w1-w2)>10)
+  {
+    w1 = w2;
+    w2 = scale.get_units();
+    delay (100);
   }
-  return weight;
+  double kilogram = w1/1000;
+  Serial.println(String(kilogram));
 }
-
-
+ 
+ 
 void turnOnFan(){
   digitalWrite(fanPin, HIGH);
 }
@@ -246,11 +238,11 @@ void turnOnSprinkler(){
 void turnOffSprinkler(){
   digitalWrite(sprinklerPin, LOW);
 }
-
+ 
 void turnOnLight(){
   digitalWrite(lightPin, HIGH);
 }
-
+ 
 void turnOffLight(){
   digitalWrite(lightPin, LOW);
 }

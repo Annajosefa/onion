@@ -123,7 +123,7 @@ class OnionSense:
         Explicit function calling weight in arduino
         '''
         self.send_command(7)
-        time.sleep(3)
+        time.sleep(1)
         response = self.get_arduino_response()
         try: 
             weight = float(response)
@@ -133,11 +133,11 @@ class OnionSense:
                 if response:
                     weight = float(response)
                     break 
-                
+        print(weight)       
         if weight <= 0:
             return self.get_weight()
-        print(weight)
-        return weight
+    
+        return weight/1000
         
 
 

@@ -1,8 +1,7 @@
 from onionsense import OnionSense
-
 machine = OnionSense()
 
-print(machine.get_weight())
+machine.turn_on_fan()
 
 
 
