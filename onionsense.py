@@ -113,8 +113,10 @@ class OnionSense:
                 'r5': proximity_sensor_5,
                 'success': True
             }
-        except Exception as e:
-            print(e)
+        except:
+            parameters ={
+                'success':False
+            }
             
         return parameters
     
