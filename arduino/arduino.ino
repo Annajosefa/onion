@@ -154,8 +154,7 @@ float getAverageMoisturePercentage (){
   float averageMoisturePercentage = (totalPercentage/1023 / 4)*100;
   return averageMoisturePercentage; 
 } 
- 
-int getProximitySensor1(){ 
+ int getProximitySensor1(){ 
   /* 
    * Check if an object is detected on Proximity Sensor 1 
    */ 
