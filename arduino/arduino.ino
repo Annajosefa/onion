@@ -148,7 +148,7 @@ float getAverageMoisturePercentage (){
   float totalPercentage = 0;
  
   for (int i=0; i<4; i++) {
-    totalPercentage += (sensorReadings[i] / 1023.00 * 100);
+    totalPercentage += (sensorReadings[i] / 1023.00) * 100;
   }
  
   float averageMoisturePercentage = totalPercentage / 4;
