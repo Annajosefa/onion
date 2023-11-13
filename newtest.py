@@ -1,7 +1,7 @@
 from onionsense import OnionSense
 machine = OnionSense()
 
-machine.turn_on_fan()
+print(machine.get_data())
 
 
 

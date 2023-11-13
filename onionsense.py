@@ -93,7 +93,7 @@ class OnionSense:
         try:
             temperature = float(data[0])
             humidity = float(data[1])
-            soil_moisture = float(data[2]) * 100
+            soil_moisture = float(data[2]) 
             lux = float(data[3])
             proximity_sensor_1 = int(data[4])
             proximity_sensor_2 = int(data[5])
