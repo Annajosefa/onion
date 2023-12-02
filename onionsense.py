@@ -3,10 +3,12 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 from firebase_admin import messaging
 from urllib.request import urlopen
+
 import datetime
 import serial
 import RPi.GPIO as GPIO
 import time
+import threading
 
 class OnionSense:
 
@@ -18,14 +20,22 @@ class OnionSense:
         cred = credentials.Certificate('account.json')
         app = firebase_admin.initialize_app(cred)
         db = firestore.client()
+        self.state_changed = threading.Event()
         
         self.parameter_reference = db.collection('parameters')
         self.row_reference = db.collection('rows')
         self.harvest_reference = db.collection('harvests')
         self.user_reference = db.collection('users')
+        self.state_reference = db.collection('states').document('current')
+        self.state_reference.on_snapshot(self._on_state_change)
         self.arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
+
         # Enter all available commands here
         self.available_commands = [0, 1, 2, 3, 4, 5, 6, 7] 
+
+        self.light_is_on = False
+        self.fan_is_on = False
+        self.sprinkler_is_on = False
         self.machine_state = False
         self.harvest_mode = False
         self.harvest_toggle_button_pin = 11
@@ -39,6 +49,13 @@ class OnionSense:
         GPIO.add_event_detect(self.button_pin, GPIO.RISING, callback = self._switch_state, bouncetime = 2000)
         GPIO.add_event_detect(self.harvest_toggle_button_pin, GPIO.RISING, callback = self._toggle_harvest_mode, bouncetime = 2000)
         GPIO.add_event_detect(self.confirm_weight_pin, GPIO.RISING, callback = self._confirm_harvest, bouncetime = 2000)
+
+        self.state_reference.update({
+            'power': False,
+            'fan': False,
+            'light': False,
+            'sprinkler': False
+        })
 
 
 
@@ -211,8 +228,8 @@ class OnionSense:
             'amount': amount,
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
-        self.harvest_reference.add(data)
-    
+        self.harvest_reference.add(data)        
+        
 
 
     def _get_user_tokens(self) -> list:
@@ -234,8 +251,8 @@ class OnionSense:
         Send a notification to all users
 
         Parameters:
-        title(str): Title message
-        body(str): Message content
+        title (str): Title message
+        body (str): Message content
         '''
         message = messaging.MulticastMessage(
             notification = messaging.Notification(
@@ -248,47 +265,96 @@ class OnionSense:
 
 
     
-    def turn_on_fan(self):
+    def set_power(self, state: bool):
         '''
-        Explicit function calling turnOnFan in arduino
+        Set power/machine state
+
+        Parameters (bool) : Machine state
         '''
-        self.send_command(1)
+        if state and not self.machine_state:
+            self.machine_state = True
+            self.state_reference.update({
+                'power': True,
+                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+            })
+        if not state and self.machine_state:
+            self.machine_state = False
+            self.state_reference.update({
+                'power': False,
+                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+            })
 
 
 
-    def turn_off_fan(self):
+    def set_fan(self, state: bool):
         '''
-        Explicit function calling turnOffFan in arduino
+        Turn fan on or off
+
+        Parameters:
+        state (bool) : Fan state
         '''
-        self.send_command(2)
+        if state and not self.fan_is_on:
+            self.send_command(1)
+            self.fan_is_on = True
+            self.state_reference.update({
+                'fan': True,
+                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+            })
+        if not state and self.fan_is_on:
+            self.send_command(2)
+            self.fan_is_on = False
+            self.state_reference.update({
+                'fan': False,
+                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+            })
 
 
 
-    def turn_on_sprinkler(self):
+    def set_sprinkler(self, state: bool):
         '''
-        Explicit function turnOnSprinkler in arduino
+        Turn sprinkler on or off
+
+        Parameters:
+        state (bool) : Sprinkler state
         '''
-        self.send_command(3)
+        if state and not self.sprinkler_is_on:
+            self.send_command(3)
+            self.sprinkler_is_on = True
+            self.state_reference.update({
+                'sprinkler': True,
+                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+            })
+        if not state and self.sprinkler_is_on:
+            self.send_command(4)
+            self.sprinkler_is_on = False
+            self.state_reference.update({
+                'sprinkler': False,
+                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+            })
 
 
 
-    def turn_off_sprinkler(self):
+    def set_light(self, state: bool):
         '''
-        Explicit function turnOffSprinkler
-        '''
-        self.send_command(4)
+        Turn light on or off
 
-    def turn_on_light(self):
+        Parameters:
+        state (bool) : Light state
         '''
-        Explicit function calling turnOnLight in arduino
-        '''
-        self.send_command(5)
-
-    def turn_off_light(self):
-        '''
-        Explicit function calling turnOffLight in arduino
-        '''
-        self.send_command(6)
+        if state and not self.light_is_on:
+            self.send_command(5)
+            self.light_is_on = True
+            self.state_reference.update({
+                'light': True,
+                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+            })
+        if not state and self.light_is_on:
+            self.send_command(6)
+            self.light_is_on = False
+            self.state_reference.update({
+                'light': False,
+                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+            })
 
 
 
@@ -308,12 +374,22 @@ class OnionSense:
 
 
     def _switch_state(self, channel):
+        '''
+        Callback function for toggling power state
+        '''
         self.machine_state = not self.machine_state
+        self.state_reference.update({
+            'power': self.machine_state,
+            'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+        })
         print(f"Machine State toggled to: {self.machine_state}")
 
 
 
     def _toggle_harvest_mode(self, channel):
+        '''
+        Callback function for toggling harvest mode
+        '''
         if self.machine_state:
             self.harvest_mode = not self.harvest_mode
             print(f"Harvest Mode toggled to: {self.harvest_mode}")
@@ -323,10 +399,23 @@ class OnionSense:
 
 
     def _confirm_harvest(self, channel):
+        '''
+        Callback function for confirming harvest value
+        '''
         if self.harvest_mode:
             weight = self.get_weight()
             self.add_harvest(weight)
             print(f"Weight confirmed: {weight}")
         else:
             print(f"Not in harvest mode!")
+
+
+    
+    def _on_state_change(self, doc_snapshot, changes, read_time):
+        state = doc_snapshot[-1].to_dict()
+        self.set_power(state['power'])
+        self.set_fan(state['fan'])
+        self.set_light(state['light'])
+        self.set_sprinkler(state['sprinkler'])
+        self.state_changed.set()
     

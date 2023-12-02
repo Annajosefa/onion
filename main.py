@@ -9,10 +9,6 @@ if __name__ == '__main__':
     '''
     machine = OnionSense()
 
-    fan_is_on = False
-    sprinkler_is_on = False
-    light_is_on = False
-
     paused = True
 
     notification_ready_1 = True
@@ -34,19 +30,16 @@ if __name__ == '__main__':
     while True:
         if machine.machine_state:
             if paused:
-                machine.turn_on_light()
+                machine.set_light(True)
                 paused = False
-                light_is_on = True
 
             time_since_last_start = datetime.datetime.now() - time_light_switched
             if time_since_last_start >= datetime.timedelta(hours=12):
-                if light_is_on:
-                    machine.turn_off_light()
-                    light_is_on = False
+                if machine.light_is_on:
+                    machine.set_light(False)
                 else:
-                    machine.turn_on_light()
-                    light_is_on = True
-                time_light_Switched = datetime.datetime.now()
+                    machine.set_light(True)
+                time_light_switched = datetime.datetime.now()
 
             parameters = machine.get_data()
             print(parameters)
@@ -62,22 +55,14 @@ if __name__ == '__main__':
                        warning_notification_ready = True
 
             if parameters['temperature'] > 25:
-                if not fan_is_on:
-                    machine.turn_on_fan()
-                    fan_is_on = True
+                machine.set_fan(True)
             else:
-                if fan_is_on:
-                    machine.turn_off_fan()
-                    fan_is_on = False
+                machine.set_fan(False)
 
             if parameters['soil']< 30:
-                if not sprinkler_is_on:
-                    machine.turn_on_sprinkler()
-                    sprinkler_is_on = True
+                machine.set_sprinkler(True)
             else:
-                if sprinkler_is_on:
-                    machine.turn_off_sprinkler()
-                    sprinkler_is_on = False
+                machine.set_sprinkler(False)
 
             machine.update_parameters(parameters)
             time.sleep(5)  
@@ -149,14 +134,6 @@ if __name__ == '__main__':
             if not paused:
                 paused = True
 
-            if fan_is_on:
-                machine.turn_off_fan()
-                fan_is_on= False
-
-            if sprinkler_is_on:
-                machine.turn_off_sprinkler()
-                sprinkler_is_on = False
-
-            if light_is_on:
-                machine.turn_off_light()
-                light_is_on = False
+            machine.set_fan(False)
+            machine.set_sprinkler(False)
+            machine.set_light(False)
