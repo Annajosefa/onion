@@ -2,12 +2,13 @@ from onionsense import OnionSense
 
 import time
 import datetime
+import logging
 
 if __name__ == '__main__':
     '''
     Entry point for program
     '''
-    machine = OnionSense()
+    machine = OnionSense(logging_level=logging.DEBUG)
 
     paused = True
 
@@ -42,7 +43,6 @@ if __name__ == '__main__':
                 time_light_switched = datetime.datetime.now()
 
             parameters = machine.get_data()
-            print(parameters)
 
             if not parameters ['success']:
                 if warning_notification_ready:

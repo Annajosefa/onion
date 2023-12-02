@@ -9,17 +9,24 @@ import serial
 import RPi.GPIO as GPIO
 import time
 import threading
+import logging
 
 class OnionSense:
 
 
-    def __init__(self) :
+    def __init__(self, logging_level: int = logging.INFO):
         '''
         Initialize a machine object
+
+        Parameters:
+        logging_level (int) : Logging level (use logging)
         '''
+        self.__initialize_logger()
+
         cred = credentials.Certificate('account.json')
         app = firebase_admin.initialize_app(cred)
         db = firestore.client()
+        self.logger.info('Database initialized')
         self.state_changed = threading.Event()
         
         self.parameter_reference = db.collection('parameters')
@@ -28,7 +35,9 @@ class OnionSense:
         self.user_reference = db.collection('users')
         self.state_reference = db.collection('states').document('current')
         self.state_reference.on_snapshot(self._on_state_change)
+
         self.arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
+        self.logger.info('Arduino initialized successfully')
 
         # Enter all available commands here
         self.available_commands = [0, 1, 2, 3, 4, 5, 6, 7] 
@@ -49,13 +58,31 @@ class OnionSense:
         GPIO.add_event_detect(self.button_pin, GPIO.RISING, callback = self._switch_state, bouncetime = 2000)
         GPIO.add_event_detect(self.harvest_toggle_button_pin, GPIO.RISING, callback = self._toggle_harvest_mode, bouncetime = 2000)
         GPIO.add_event_detect(self.confirm_weight_pin, GPIO.RISING, callback = self._confirm_harvest, bouncetime = 2000)
+        self.logger.info('GPIO related initialized successfully')
 
-        self.state_reference.update({
+        initial_state = {
             'power': False,
             'fan': False,
             'light': False,
             'sprinkler': False
-        })
+        }
+        self.state_reference.update(initial_state)
+        self.logger.info('All parameters set to False')
+        self.firebase_logger.info(f'[state][current](update) : {initial_state}')
+
+
+
+    def __initialize_logger(self):
+        format = logging.Formatter('%(asctime)s [%(levelname)s] - %(message)s.')
+        main_handler = logging.FileHandler('onionsense.log')
+        main_handler.setFormatter(format)
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(main_handler)
+
+        firebase_handler = logging.FileHandler('firebase.log')
+        firebase_handler.setFormatter(format)
+        self.firebase_logger = logging.getLogger('firebase')
+        self.firebase_logger.addHandler(firebase_handler)
 
 
 
@@ -67,6 +94,7 @@ class OnionSense:
         Parameters:
         command(int): Command to send
         '''
+        self.logger.debug(f'Sent command to Arduino: {command}')
         if(command in self.available_commands):
             while True:
                 self.arduino.write(bytes(str(command)+'\n','utf-8'))
@@ -89,6 +117,7 @@ class OnionSense:
             response = self.arduino.readline().decode('utf-8').rstrip()
         except UnicodeDecodeError:
             response = self.arduino.readline().decode('utf-8').rstrip()
+        self.logger.debug(f'Got response from arduino: {response}')
         return response
     
 
@@ -134,7 +163,8 @@ class OnionSense:
             parameters ={
                 'success':False
             }
-            
+        
+        self.logger.debug(f'Got parameters from Arduino: {parameters}')
         return parameters
     
     def get_weight(self):
@@ -152,10 +182,10 @@ class OnionSense:
                 if response:
                     weight = float(response)
                     break 
-        print(weight)       
+        self.logger.debug(f'Got weight: {weight}')
         if weight <= 0:
             return self.get_weight()
-    
+        self.logger.debug(f'Got final weight: {weight}')
         return weight/1000
         
 
@@ -167,15 +197,15 @@ class OnionSense:
         Parameters:
         parameters(dict): Dict containing parameters\n
         Sample format:
-            parameters = {\n
-            'soil': soil_moisture, \n
-            'humidity': humidity, \n
-            'temperature': temperature, \n
-            'light': lux, \n
+            ```python
+            parameters = {
+            'soil': soil_moisture,
+            'humidity': humidity,
+            'temperature': temperature,
+            'light': lux,
             }
+            ```
         '''
-        
-        
         data = {
             'soil': parameters['soil'],
             'humidity':parameters['humidity'],
@@ -184,24 +214,26 @@ class OnionSense:
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
         self.parameter_reference.add(data)
+        self.logger.info(f'Parameters updated: {data}')
+        self.firebase_logger.info(f'[parameters](update) : {data}')
 
 
 
     def update_harvest_rows(self, parameters: dict):
         '''
-        [To Update]
-
         Add/ update harvest rows entry in firebase
 
         Parameters:
         parameters(dict): Dict containing harvest rows \n
         Sample format:
-            parameters = {\n
-                'r1': proximity_sensor_1, \n
-                'r2': proximity_sensor_2, \n
-                'r3': proximity_sensor_3, \n
-                'r4': proximity_sensor_4, \n
-                'r5': proximity_sensor_5, \n
+            ```python
+            parameters = {
+                'r1': proximity_sensor_1,
+                'r2': proximity_sensor_2,
+                'r3': proximity_sensor_3,
+                'r4': proximity_sensor_4,
+                'r5': proximity_sensor_5,
+            ```
         }
         '''
 
@@ -214,6 +246,8 @@ class OnionSense:
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
         self.row_reference.document('current').set(data)
+        self.logger.info(f'Rows updated: {data}')
+        self.firebase_logger.info(f'[rows](update) : {data}')
 
 
 
@@ -228,7 +262,9 @@ class OnionSense:
             'amount': amount,
             'created_at': datetime.datetime.now(tz=datetime.timezone.utc)
         }
-        self.harvest_reference.add(data)        
+        self.harvest_reference.add(data)
+        self.logger.info(f'Harvest added: {amount}')      
+        self.firebase_logger.info(f'[harvest](add) : {amount}')      
         
 
 
@@ -243,6 +279,7 @@ class OnionSense:
         users = self.user_reference.stream()
         for user in users:
             tokens.append(user.id)
+        self.firebase_logger(f'[users]: {tokens}')
         return tokens
     
 
@@ -256,12 +293,13 @@ class OnionSense:
         '''
         message = messaging.MulticastMessage(
             notification = messaging.Notification(
-                title = title,
-                body= body,
+                title=title,
+                body=body,
             ),
             tokens = self._get_user_tokens()
         )
         messaging.send_multicast(message)
+        self.logger.info(f'Notification sent: [{title}]({body})')
 
 
     
@@ -277,12 +315,14 @@ class OnionSense:
                 'power': True,
                 'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
             })
+            self.logger.info(f'Power state set to True')
         if not state and self.machine_state:
             self.machine_state = False
             self.state_reference.update({
                 'power': False,
                 'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
             })
+            self.logger.info(f'Power state set to False')
 
 
 
@@ -300,6 +340,7 @@ class OnionSense:
                 'fan': True,
                 'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
             })
+            self.logger.info(f'Fan state set to True')
         if not state and self.fan_is_on:
             self.send_command(2)
             self.fan_is_on = False
@@ -307,6 +348,7 @@ class OnionSense:
                 'fan': False,
                 'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
             })
+            self.logger.info(f'Fan state set to False')
 
 
 
@@ -324,6 +366,7 @@ class OnionSense:
                 'sprinkler': True,
                 'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
             })
+            self.logger.info(f'Sprinkler state set to True')
         if not state and self.sprinkler_is_on:
             self.send_command(4)
             self.sprinkler_is_on = False
@@ -331,6 +374,7 @@ class OnionSense:
                 'sprinkler': False,
                 'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
             })
+            self.logger.info(f'Sprinkler state set to False')
 
 
 
@@ -348,6 +392,7 @@ class OnionSense:
                 'light': True,
                 'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
             })
+            self.logger.info(f'Light state set to True')
         if not state and self.light_is_on:
             self.send_command(6)
             self.light_is_on = False
@@ -355,6 +400,7 @@ class OnionSense:
                 'light': False,
                 'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
             })
+            self.logger.info(f'Light state set to False')
 
 
 
@@ -382,7 +428,7 @@ class OnionSense:
             'power': self.machine_state,
             'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
         })
-        print(f"Machine State toggled to: {self.machine_state}")
+        self.logger.info(f'[Callback] Power state set to {self.machine_state}')
 
 
 
@@ -392,9 +438,9 @@ class OnionSense:
         '''
         if self.machine_state:
             self.harvest_mode = not self.harvest_mode
-            print(f"Harvest Mode toggled to: {self.harvest_mode}")
+            self.logger.info(f'[Callback] Harvest mode set to {self.harvest_mode}')
         else:
-            print(f"Machine is not turned on yet!")
+            self.logger.info(f'[Callback] Tried toggling harvest mode but not powered on')
 
 
 
@@ -405,14 +451,19 @@ class OnionSense:
         if self.harvest_mode:
             weight = self.get_weight()
             self.add_harvest(weight)
-            print(f"Weight confirmed: {weight}")
+            self.logger.info(f'[Callback] Weight confirmed: {weight}')
         else:
-            print(f"Not in harvest mode!")
+            self.logger.info(f'[Callback] Tried confirm weight but not on harvest mode')
 
 
     
     def _on_state_change(self, doc_snapshot, changes, read_time):
+        '''
+        Callback function for detected changes in
+        state coming from Firebase
+        '''
         state = doc_snapshot[-1].to_dict()
+        self.firebase_logger.info(f'[states][current](read) : {state}')
         self.set_power(state['power'])
         self.set_fan(state['fan'])
         self.set_light(state['light'])
