@@ -53,6 +53,8 @@ if __name__ == '__main__':
                 else:
                    if (datetime.datetime.now() - last_warning_notification) >= datetime.timedelta(minutes=5):
                        warning_notification_ready = True
+                
+                continue
 
             if parameters['temperature'] > 25:
                 machine.set_fan(True)
