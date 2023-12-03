@@ -27,7 +27,6 @@ class OnionSense:
         app = firebase_admin.initialize_app(cred)
         db = firestore.client()
         self.logger.info('Database initialized')
-        self.state_changed = threading.Event()
         
         self.parameter_reference = db.collection('parameters')
         self.row_reference = db.collection('rows')
@@ -98,6 +97,7 @@ class OnionSense:
         if(command in self.available_commands):
             while True:
                 self.arduino.write(bytes(str(command)+'\n','utf-8'))
+                time.sleep(0.5)
                 response = self.get_arduino_response()
                 if (response  == 'ok'):
                     break
@@ -133,7 +133,7 @@ class OnionSense:
         response = self.get_arduino_response()
 
         while not response:
-            self.get_arduino_response()
+            response = self.get_arduino_response()
 
         data = response.split()
         try:
@@ -468,5 +468,5 @@ class OnionSense:
         self.set_fan(state['fan'])
         self.set_light(state['light'])
         self.set_sprinkler(state['sprinkler'])
-        self.state_changed.set()
+        
     
