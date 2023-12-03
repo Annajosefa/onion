@@ -144,16 +144,16 @@ float getAverageMoisturePercentage (){
   /* 
    * Get current moisture level 
    */ 
-  float sensorReading1 = analogRead(sensorPin1);
-  float sensorReading2 = analogRead(sensorPin2);
-  float sensorReading3 = analogRead(sensorPin3);
-  float sensorReading4 = analogRead(sensorPin4);
-
-  float totalPercentage = sensorReading1 + sensorReading2 + sensorReading3 + sensorReading4;
+  int sensorReadings[] = {analogRead(sensorPin1), analogRead(sensorPin2), analogRead(sensorPin3), analogRead(sensorPin4)};
+  float totalPercentage = 0;
  
-  float averageMoisturePercentage = (totalPercentage/1023 / 4)*100;
+  for (int i=0; i<4; i++) {
+    totalPercentage += ( 100.0 - (sensorReadings[i] / 1023.00 * 100));
+  }
+ 
+  float averageMoisturePercentage = totalPercentage / 4;
   return averageMoisturePercentage; 
-} 
+}
  int getProximitySensor1(){ 
   /* 
    * Check if an object is detected on Proximity Sensor 1 

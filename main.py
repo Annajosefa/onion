@@ -114,7 +114,8 @@ if __name__ == '__main__':
                 notification_ready_3 = True
 
             if parameters['r4'] == 0 and  notification_ready_4:
-                machine.send_notification(
+                machine.send_notification( 
+                    
                     title= 'Harvest Ready',
                     body= 'Harvest is ready in Row 4. Please collect!'
                 )
