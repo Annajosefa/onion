@@ -279,7 +279,7 @@ class OnionSense:
         users = self.user_reference.stream()
         for user in users:
             tokens.append(user.id)
-        self.firebase_logger(f'[users]: {tokens}')
+        self.firebase_logger.info(f'[users]: {tokens}')
         return tokens
     
 
