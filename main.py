@@ -20,12 +20,14 @@ if __name__ == '__main__':
     notification_ready_3 = True
     notification_ready_4 = True
     notification_ready_5 = True
+    warning_notification_ready = True
 
     last_notification_1 = datetime.datetime.now()
     last_notification_2 = datetime.datetime.now()
     last_notification_3 = datetime.datetime.now()
     last_notification_4 = datetime.datetime.now()
     last_notification_5 = datetime.datetime.now()
+    last_warning_notification = datetime.datetime.now()
 
     time_light_switched = datetime.datetime.now()
 
@@ -48,14 +50,21 @@ if __name__ == '__main__':
 
             parameters = machine.get_data()
             print(parameters)
+
             if not parameters ['success']:
-                continue
+                if warning_notification_ready:
+                    machine.send_notification(
+                        title='Component failure encountered',
+                        body='A component has malfunctioned'
+                    )
+                else:
+                   if (datetime.datetime.now() - last_warning_notification) >= datetime.timedelta(minutes=5):
+                       warning_notification_ready = True
 
             if parameters['temperature'] > 25:
                 if not fan_is_on:
                     machine.turn_on_fan()
                     fan_is_on = True
-
             else:
                 if fan_is_on:
                     machine.turn_off_fan()
@@ -65,7 +74,6 @@ if __name__ == '__main__':
                 if not sprinkler_is_on:
                     machine.turn_on_sprinkler()
                     sprinkler_is_on = True
-
             else:
                 if sprinkler_is_on:
                     machine.turn_off_sprinkler()
@@ -153,5 +161,3 @@ if __name__ == '__main__':
             if light_is_on:
                 machine.turn_off_light()
                 light_is_on = False
-
-         
