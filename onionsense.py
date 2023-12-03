@@ -77,11 +77,13 @@ class OnionSense:
         main_handler.setFormatter(format)
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(main_handler)
+        self.logger.setLevel(logging.INFO)
 
         firebase_handler = logging.FileHandler('firebase.log')
         firebase_handler.setFormatter(format)
         self.firebase_logger = logging.getLogger('firebase')
         self.firebase_logger.addHandler(firebase_handler)
+        self.logger.setLevel(logging.INFO)
 
 
 
