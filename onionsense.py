@@ -47,8 +47,8 @@ class OnionSense:
         self.sprinkler_is_on = False
         self.machine_state = False
         self.harvest_mode = False
-        self.harvest_toggle_button_pin = 11
-        self.confirm_weight_pin = 10
+        self.harvest_toggle_button_pin = 27
+        self.confirm_weight_pin = 22
         self.button_pin = 17
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
