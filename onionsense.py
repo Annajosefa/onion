@@ -178,7 +178,9 @@ class OnionSense:
         response = self.get_arduino_response()
         try: 
             weight = float(response)
-        except:
+        except Exception as e:
+            self.logger.warn(f'Got response: {response}')
+            self.logger.error(f'Exception: {e}')
             while not response:
                 response = self.get_arduino_response()
                 if response:
