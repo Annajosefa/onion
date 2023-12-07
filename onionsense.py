@@ -21,7 +21,7 @@ class OnionSense:
         Parameters:
         logging_level (int) : Logging level (use logging)
         '''
-        self.__initialize_logger()
+        self.__initialize_logger(logging_level)
 
         cred = credentials.Certificate('account.json')
         app = firebase_admin.initialize_app(cred)
@@ -71,19 +71,19 @@ class OnionSense:
 
 
 
-    def __initialize_logger(self):
+    def __initialize_logger(self, logging_level):
         format = logging.Formatter('%(asctime)s [%(levelname)s] - %(message)s.')
         main_handler = logging.FileHandler('onionsense.log')
         main_handler.setFormatter(format)
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(main_handler)
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging_level)
 
         firebase_handler = logging.FileHandler('firebase.log')
         firebase_handler.setFormatter(format)
         self.firebase_logger = logging.getLogger('firebase')
         self.firebase_logger.addHandler(firebase_handler)
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging_level)
 
 
 
