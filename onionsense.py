@@ -67,7 +67,7 @@ class OnionSense:
         }
         self.state_reference.update(initial_state)
         self.logger.info('All parameters set to False')
-        self.firebase_logger.info(f'[state][current](update) : {initial_state}')
+        self.logger.info(f'[state][current](update) : {initial_state}')
 
 
 
@@ -219,7 +219,7 @@ class OnionSense:
         }
         self.parameter_reference.add(data)
         self.logger.info(f'Parameters updated: {data}')
-        self.firebase_logger.info(f'[parameters](update) : {data}')
+        self.logger.info(f'[parameters](update) : {data}')
 
 
 
@@ -251,7 +251,7 @@ class OnionSense:
         }
         self.row_reference.document('current').set(data)
         self.logger.info(f'Rows updated: {data}')
-        self.firebase_logger.info(f'[rows](update) : {data}')
+        self.logger.info(f'[rows](update) : {data}')
 
 
 
@@ -268,7 +268,7 @@ class OnionSense:
         }
         self.harvest_reference.add(data)
         self.logger.info(f'Harvest added: {amount}')      
-        self.firebase_logger.info(f'[harvest](add) : {amount}')      
+        self.logger.info('[Firebase] Add harvest : {amount}')      
         
 
 
@@ -283,7 +283,7 @@ class OnionSense:
         users = self.user_reference.stream()
         for user in users:
             tokens.append(user.id)
-        self.firebase_logger.info(f'[users]: {tokens}')
+        self.firebase_logger.info('[Firebase] users : {tokens}')
         return tokens
     
 
