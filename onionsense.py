@@ -83,7 +83,7 @@ class OnionSense:
         firebase_handler.setFormatter(format)
         self.firebase_logger = logging.getLogger('firebase')
         self.firebase_logger.addHandler(firebase_handler)
-        self.logger.setLevel(logging_level)
+        self.firebase_logger.setLevel(logging_level)
 
 
 
@@ -169,6 +169,8 @@ class OnionSense:
         self.logger.debug(f'Got parameters from Arduino: {parameters}')
         return parameters
     
+
+
     def get_weight(self):
         '''
         Explicit function calling weight in arduino
@@ -176,16 +178,9 @@ class OnionSense:
         self.send_command(7)
         time.sleep(1)
         response = self.get_arduino_response()
-        try: 
-            weight = float(response)
-        except Exception as e:
-            self.logger.warn(f'Got response: {response}')
-            self.logger.error(f'Exception: {e}')
-            while not response:
-                response = self.get_arduino_response()
-                if response:
-                    weight = float(response)
-                    break 
+        while not response:
+            response = self.get_arduino_response()
+        weight = float(response)
         self.logger.debug(f'Got weight: {weight}')
         if weight <= 0:
             return self.get_weight()
