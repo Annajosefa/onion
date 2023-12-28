@@ -67,7 +67,7 @@ class OnionSense:
         }
         self.state_reference.update(initial_state)
         self.logger.info('All parameters set to False')
-        self.logger.info(f'[state][current](update) : {initial_state}')
+        self.firebase_logger.info(f'[state][current](update) : {initial_state}')
 
 
 
@@ -83,7 +83,7 @@ class OnionSense:
         firebase_handler.setFormatter(format)
         self.firebase_logger = logging.getLogger('firebase')
         self.firebase_logger.addHandler(firebase_handler)
-        self.firebase_logger.setLevel(logging_level)
+        self.logger.setLevel(logging_level)
 
 
 
@@ -169,8 +169,6 @@ class OnionSense:
         self.logger.debug(f'Got parameters from Arduino: {parameters}')
         return parameters
     
-
-
     def get_weight(self):
         '''
         Explicit function calling weight in arduino
@@ -178,9 +176,16 @@ class OnionSense:
         self.send_command(7)
         time.sleep(1)
         response = self.get_arduino_response()
-        while not response:
-            response = self.get_arduino_response()
-        weight = float(response)
+        try: 
+            weight = float(response)
+        except Exception as e:
+            self.logger.warn(f'Got response: {response}')
+            self.logger.error(f'Exception: {e}')
+            while not response:
+                response = self.get_arduino_response()
+                if response:
+                    weight = float(response)
+                    break 
         self.logger.debug(f'Got weight: {weight}')
         if weight <= 0:
             return self.get_weight()
@@ -214,7 +219,7 @@ class OnionSense:
         }
         self.parameter_reference.add(data)
         self.logger.info(f'Parameters updated: {data}')
-        self.logger.info(f'[parameters](update) : {data}')
+        self.firebase_logger.info(f'[parameters](update) : {data}')
 
 
 
@@ -246,7 +251,7 @@ class OnionSense:
         }
         self.row_reference.document('current').set(data)
         self.logger.info(f'Rows updated: {data}')
-        self.logger.info(f'[rows](update) : {data}')
+        self.firebase_logger.info(f'[rows](update) : {data}')
 
 
 
@@ -263,7 +268,7 @@ class OnionSense:
         }
         self.harvest_reference.add(data)
         self.logger.info(f'Harvest added: {amount}')      
-        self.logger.info('[Firebase] Add harvest : {amount}')      
+        self.firebase_logger.info(f'[harvest](add) : {amount}')      
         
 
 
@@ -278,7 +283,7 @@ class OnionSense:
         users = self.user_reference.stream()
         for user in users:
             tokens.append(user.id)
-        self.firebase_logger.info('[Firebase] users : {tokens}')
+        self.firebase_logger.info(f'[users]: {tokens}')
         return tokens
     
 
@@ -463,9 +468,10 @@ class OnionSense:
         '''
         state = doc_snapshot[-1].to_dict()
         self.firebase_logger.info(f'[states][current](read) : {state}')
-        self.set_power(state['power'])
+        print(f'[states][current](read) : {state}')
+        '''self.set_power(state['power'])
         self.set_fan(state['fan'])
         self.set_light(state['light'])
-        self.set_sprinkler(state['sprinkler'])
+        self.set_sprinkler(state['sprinkler'])'''
         
     
