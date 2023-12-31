@@ -51,12 +51,20 @@ class OnionSense:
         self.button_pin = 17
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.button_pin, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
-        GPIO.setup(self.harvest_toggle_button_pin, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
-        GPIO.setup(self.confirm_weight_pin, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
-        GPIO.add_event_detect(self.button_pin, GPIO.RISING, callback = self._switch_state, bouncetime = 2000)
-        GPIO.add_event_detect(self.harvest_toggle_button_pin, GPIO.RISING, callback = self._toggle_harvest_mode, bouncetime = 2000)
-        GPIO.add_event_detect(self.confirm_weight_pin, GPIO.RISING, callback = self._confirm_harvest, bouncetime = 2000)
+        GPIO.setup(self.button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+        GPIO.setup(self.harvest_toggle_button_pin, GPIO.IN,
+                   pull_up_down=GPIO.PUD_DOWN)
+        GPIO.setup(self.confirm_weight_pin, GPIO.IN,
+                   pull_up_down=GPIO.PUD_DOWN)
+        GPIO.add_event_detect(self.button_pin, GPIO.RISING,
+                              callback=self._switch_state,
+                              bouncetime=2000)
+        GPIO.add_event_detect(self.harvest_toggle_button_pin, GPIO.RISING,
+                              callback=self._toggle_harvest_mode,
+                              bouncetime=2000)
+        GPIO.add_event_detect(self.confirm_weight_pin, GPIO.RISING,
+                              callback=self._confirm_harvest,
+                              bouncetime=2000)
         self.logger.info('GPIO related initialized successfully')
 
         initial_state = {
@@ -307,56 +315,63 @@ class OnionSense:
 
 
     
-    def set_power(self, state: bool):
+    def set_power(self, state: bool, update: bool = False):
         '''
         Set power/machine state
 
-        Parameters (bool) : Machine state
+        Parameters 
+        state (bool) : Machine state
+        update (bool) : Update to firebase
         '''
         if state and not self.machine_state:
             self.machine_state = True
-            self.state_reference.update({
-                'power': True,
-                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
-            })
             self.logger.info(f'Power state set to True')
+            if update:
+                self.state_reference.update({
+                    'power': True,
+                    'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+                })
         if not state and self.machine_state:
             self.machine_state = False
-            self.state_reference.update({
-                'power': False,
-                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
-            })
             self.logger.info(f'Power state set to False')
+            if update:
+                self.state_reference.update({
+                    'power': False,
+                    'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+                })
 
 
 
-    def set_fan(self, state: bool):
+    def set_fan(self, state: bool, update: bool = False):
         '''
         Turn fan on or off
 
         Parameters:
         state (bool) : Fan state
+        update (bool) : Update to firebase
         '''
         if state and not self.fan_is_on:
             self.send_command(1)
             self.fan_is_on = True
-            self.state_reference.update({
-                'fan': True,
-                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
-            })
             self.logger.info(f'Fan state set to True')
+            if update:
+                self.state_reference.update({
+                    'fan': True,
+                    'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+                })
         if not state and self.fan_is_on:
             self.send_command(2)
             self.fan_is_on = False
-            self.state_reference.update({
-                'fan': False,
-                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
-            })
             self.logger.info(f'Fan state set to False')
+            if update:
+                self.state_reference.update({
+                    'fan': False,
+                    'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+                })
 
 
 
-    def set_sprinkler(self, state: bool):
+    def set_sprinkler(self, state: bool, update: bool = False):
         '''
         Turn sprinkler on or off
 
@@ -366,23 +381,25 @@ class OnionSense:
         if state and not self.sprinkler_is_on:
             self.send_command(3)
             self.sprinkler_is_on = True
-            self.state_reference.update({
-                'sprinkler': True,
-                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
-            })
             self.logger.info(f'Sprinkler state set to True')
+            if update:
+                self.state_reference.update({
+                    'sprinkler': True,
+                    'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+                })
         if not state and self.sprinkler_is_on:
             self.send_command(4)
             self.sprinkler_is_on = False
-            self.state_reference.update({
-                'sprinkler': False,
-                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
-            })
             self.logger.info(f'Sprinkler state set to False')
+            if update:
+                self.state_reference.update({
+                    'sprinkler': False,
+                    'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+                })
 
 
 
-    def set_light(self, state: bool):
+    def set_light(self, state: bool, update: bool = False):
         '''
         Turn light on or off
 
@@ -392,19 +409,21 @@ class OnionSense:
         if state and not self.light_is_on:
             self.send_command(5)
             self.light_is_on = True
-            self.state_reference.update({
-                'light': True,
-                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
-            })
             self.logger.info(f'Light state set to True')
+            if update:
+                self.state_reference.update({
+                    'light': True,
+                    'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+                })
         if not state and self.light_is_on:
             self.send_command(6)
             self.light_is_on = False
-            self.state_reference.update({
-                'light': False,
-                'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
-            })
             self.logger.info(f'Light state set to False')
+            if update:
+                self.state_reference.update({
+                    'light': False,
+                    'updated_at': datetime.datetime.now(tz=datetime.timezone.utc)
+                })
 
 
 
@@ -469,9 +488,9 @@ class OnionSense:
         state = doc_snapshot[-1].to_dict()
         self.firebase_logger.info(f'[states][current](read) : {state}')
         print(f'[states][current](read) : {state}')
-        '''self.set_power(state['power'])
+        self.set_power(state['power'])
         self.set_fan(state['fan'])
         self.set_light(state['light'])
-        self.set_sprinkler(state['sprinkler'])'''
-        
+        self.set_sprinkler(state['sprinkler'])
+
     
