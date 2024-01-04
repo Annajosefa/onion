@@ -21,8 +21,8 @@ int proximitySensor5 = 11;
 int lightPin = 3; 
 int fanPin = 4; 
 int sprinklerPin = 5; 
-uint8_t dataPin = 12;
-uint8_t clockPin = 13;
+uint8_t dataPin = 13;
+uint8_t clockPin = 12;
 const int sensorPin1 = A0; 
 const int sensorPin2 = A1; 
 const int sensorPin3 = A2; 
@@ -52,7 +52,7 @@ void setup() {
   lightMeter.begin();
  
  
-  scale.set_scale(409.07428571);
+  scale.set_scale(475.99404762);
   scale.tare(); 
  
 } 
