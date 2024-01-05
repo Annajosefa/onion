@@ -184,16 +184,18 @@ class OnionSense:
         self.send_command(7)
         time.sleep(1)
         response = self.get_arduino_response()
-        try: 
-            weight = float(response)
-        except Exception as e:
-            self.logger.warn(f'Got response: {response}')
-            self.logger.error(f'Exception: {e}')
-            while not response:
-                response = self.get_arduino_response()
-                if response:
-                    weight = float(response)
-                    break 
+        valid = False
+        while not valid:
+            try: 
+                weight = float(response)
+            except Exception as e:
+                self.logger.warn(f'Got response: {response}')
+                self.logger.error(f'Exception: {e}')
+                while not response:
+                    response = self.get_arduino_response()
+                    if response:
+                        weight = float(response)
+                        valid = True
         self.logger.debug(f'Got weight: {weight}')
         if weight <= 0:
             return self.get_weight()
