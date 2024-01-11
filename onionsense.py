@@ -196,11 +196,11 @@ class OnionSense:
                     if response:
                         weight = float(response)
                         valid = True
-        self.logger.debug(f'Got weight: {weight}')
+      
         if weight <= 0:
             return self.get_weight()
         self.logger.debug(f'Got final weight: {weight}')
-        return weight/1000
+        return weight
         
 
 
