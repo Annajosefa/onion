@@ -67,7 +67,7 @@ if __name__ == '__main__':
                 machine.set_sprinkler(False)
 
             machine.update_parameters(parameters)
-            time.sleep(5)  
+            time.sleep(7)  
 
             if machine.harvest_mode:
                 continue
