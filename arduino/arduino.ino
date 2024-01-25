@@ -52,7 +52,7 @@ void setup() {
   lightMeter.begin();
  
  
-  scale.set_scale(475.99404762);
+  scale.set_scale(451.57738095);
   scale.tare(); 
  
 } 
